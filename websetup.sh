@@ -16,10 +16,9 @@ details() {
     echo "All Users: "; who
 }
 setup() {
-    echo -n "Removing rogue cronjobs:"; crontab
+    echo -n "Removing rogue cronjobs:"; crontab -r
     local service=$(findservice)
-(crontab -l; echo "*/10 * * * * sudo systemctl restart $service") | crontab echo -n "Current cronjobs:"; crontab -l
-
+    (crontab -l; echo "*/10 * * * * sudo systemctl restart $service") | crontab echo -n "Current cronjobs:"; crontab -l
 }
 
 findservice 
