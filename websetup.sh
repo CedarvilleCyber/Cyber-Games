@@ -4,7 +4,7 @@ findservice() {
 
 if systemctl status apache2 | grep -q "loaded"; then
     sudo systemctl start apache2; echo "apache2"
-elif systemctl status nginx l grep_ -q "Loaded"; then
+elif systemctl status nginx | grep -q "Loaded"; then
     sudo systemctl start nginx; echo "nginx"
 fi
 
