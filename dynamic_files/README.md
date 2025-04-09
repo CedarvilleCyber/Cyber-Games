@@ -1,6 +1,6 @@
 This directory exists to store files with data that will change on competition day.
 
-# [./scoring_users.txt]
+# [[./scoring_users.txt]]
 - This file contains a list of all scoring users who need to login using SSH.
 - Used by:
   - [../scripts/ssh_keys.sh]
