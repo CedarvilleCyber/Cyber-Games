@@ -8,7 +8,7 @@ This directory exists to store files with data that will change on competition d
 - This file contains the scoring public key.
 - Used by:
   - [ssh_keys.sh](../scripts/ssh_keys.sh)
-# [./david_key.pub]
+# [david_key.pub](./david_key.pub)
 - This file contains the public key that allows David to do remote hardening.
 - Used by:
   - [ssh_keys.sh](../scripts/ssh_keys.sh)
