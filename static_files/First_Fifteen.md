@@ -33,7 +33,7 @@ usermod -a -G sudo blueteam
 exit
 
 # Lock root and remove shell
-# Do the same fo redteam user if it exists
+# Do the same for redteam user if it exists
 sudo passwd -l root
 sudo passwd -l redteam
 sudo vi /etc/passwd
