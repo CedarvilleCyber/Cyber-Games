@@ -6,3 +6,5 @@
 ## [First_Fifteen_Commands_Only.md](./First_Fifteen_Commands_Only.md)
 - This file documents the initial commands that should be run
 - See [First_Fifteen.md](./First_Fifteen.md) for details.
+## [Networking.md](./Networking.md)
+- This file documents how to set up networking files for various OSes.
