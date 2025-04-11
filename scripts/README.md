@@ -10,7 +10,7 @@ This directory exists to store scripts that will be run on competition day.
 - Author: Christopher Reed
 - Must be run with sudo.
 - Uses:
-  - [scoring_users.txt](../dynamic_files/scoring_users.txt): List of scoring users
+  - [ssh_scoring_users.txt](../dynamic_files/ssh_scoring_users.txt): List of SSH scoring users
   - [scoring_key.pub](../dynamic_files/scoring_users.txt): Public Scoring Key
   - [david_key.pub](../dynamic_files/david_key.pub): David's Public Key
 ## [websetup.sh](./websetup.sh)
