@@ -118,7 +118,7 @@ sudo ./scripts/backups.sh
 	- Restart services
 ## Networking Setup
 - Set up appropriately for OS
-- [[Networking]]
+- Reference [Networking.md](./Networking.md) if necessary
 - Once your network is set up, Red Team can start attacking
 ```Shell
 apt update -y
