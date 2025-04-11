@@ -40,10 +40,11 @@ grep -w wheel /etc/group
 grep -w ssh /etc/group
 grep -w blueteam /etc/group
 ```
-  ### Hardening SSH
+  ### Hardening SSH and Global Environment Variables
 - See [First_Fifteen.md](./First_Fifteen.md) for what to edit
 ```Shell
 sudo vi /etc/ssh/sshd_config
+sudo vi /etc/environment
 ```
 ## Post Internet Access
 ```Shell
