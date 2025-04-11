@@ -1,14 +1,13 @@
 # First 15 Checklist
 
-### First Commands
-#####   Machine Documentation
+## Machine Documentation
 ```Shell
 hostnamectl status
 ip a
 whoami
 ```
 - Screenshot
-#####   Immediate Backups
+## Immediate Backups
 - Run as root user (`sudo su` if not already root)
 ```Shell
 export DIR="/root/backups"
@@ -23,7 +22,7 @@ init_backup /usr/sbin sbin
 ```
 
 - Add any additional important directories
-#####   Initial Hardening
+## Initial Hardening
 - Commands to run (explained below)
 ```Shell
 # Create User
@@ -117,7 +116,7 @@ sudo ./scripts/backups.sh
 		- Only change after getting backup SSH key
 			- Sent via `scp`, which requires SSH
 	- Restart services
-#####   Networking Setup
+## Networking Setup
 - Set up appropriately for OS
 - [[Networking]]
 - Once your network is set up, Red Team can start attacking
@@ -131,7 +130,7 @@ chmod 500 . ./scripts ./dynamic_files
 chmod 400 ./dynamic_files ./scripts/README.md
 chmod 700 ./scripts/*.sh
 ```
-#####   SSH
+## SSH
 ```Shell
 add_key () {
 	KEY=$1
@@ -161,9 +160,9 @@ systemctl enable sshd
 systemctl restart ssh
 systemctl restart sshd
 ```
-#####   Individual Service
+## Individual Service
 - Get it set up according to your own checklist
-#####   Continual Backups
+## Continual Backups
 - Edit `/etc/environment`
 	- Remove anything malicious
 	- Ensure sensible PATH
