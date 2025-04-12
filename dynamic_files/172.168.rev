@@ -1,0 +1,12 @@
+$TTL	600
+@	IN	SOA	rigdemark.team2.net. root.localhost. (
+				1	  ; SERIAL
+				3h	; REFRESH
+				1h		; RETRY
+				1w	; EXPIRE
+				1h )	; MINIMUM
+
+@		IN	NS	rigdemark.team2.net.
+5.2	IN PTR	www.team2.net.
+7.2	IN PTR	db.team2.net.
+12.2	IN PTR	ns1.team2.net.
