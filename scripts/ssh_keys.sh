@@ -1,3 +1,5 @@
+#!/bin/bash
+
 add_key () {
 	KEY=$1
 	USER=$2
