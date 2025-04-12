@@ -15,6 +15,7 @@ add_key () {
 	chown "${USER}:${USER}" ${AUTHORIZED_KEYS}
 }
 
+cd ~/Cyber-Games
 # Add scoring SSH key to each scoring user
 for user in $(./dynamic_files/scoring_users.txt); do
     add_key ./dynamic_files/scoring_key.pub $user
