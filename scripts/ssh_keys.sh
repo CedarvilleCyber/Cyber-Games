@@ -15,6 +15,12 @@ add_key () {
 	chown "${USER}:${USER}" ${AUTHORIZED_KEYS}
 }
 
+if [ $(id -u) != 0 ]
+then
+    echo "You must run this script with sudo!"
+    exit 1
+fi
+
 cd ~/Cyber-Games
 # Add scoring SSH key to each scoring user
 for user in $(./dynamic_files/scoring_users.txt); do
