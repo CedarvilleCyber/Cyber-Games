@@ -105,10 +105,6 @@ sudo ./scripts/backups.sh
 			- Remove authorized_keys2
 		- `PasswordAuthentication no`
 		- `PermitEmptyPasswords no`
-		- `ChallengeResponseAuthentication no`
-		- `UsePAM no`
-		- `UseDNS no`
-		- `X11Forwarding no`
 	- `/etc/ssh/ssh_config`
 		- Less necessary, but still good in case Red Team finds a way in
 		- Lydia Only: change port to 2222
@@ -126,51 +122,12 @@ cd ~
 git clone https://github.com/CedarvilleCyber/Cyber-Games
 cd Cyber-Games
 chmod 500 . ./scripts ./dynamic_files
-chmod 400 ./dynamic_files ./scripts/README.md
+chmod 400 ./dynamic_files/* ./static_files/* ./scripts/README.md ./README.md
 chmod 700 ./scripts/*.sh
-```
-## SSH
-```Shell
-add_key () {
-	KEY=$1
-	USER=$2
-	SSH_DIR="/home/${USER}/.ssh"
-	AUTHORIZED_KEYS="${SSH_DIR}/authorized_keys"
-	if [ ! -d ${SSH_DIR} ]; then
-		mkdir -p ${SSH_DIR}
-		chmod 700 ${SSH_DIR}
-		chown "${USER}:${USER}" 
-	fi
-	cp ${KEY} ${SSH_DIR}
-	chmod 600 ${SSH_DIR}
-	chown "${USER}:${USER}" ${AUTHORIZED_KEYS}
-}
-
-# Add scoring SSH key to each scoring user
-for user in $(./dynamic_files/scoring_users.txt); do
-    add_key ./dynamic_files/scoring_key.pub $user
-done
-# Add SSH key for David to do hardening
-add_key ./dynamic_files/david_key.pub blueteam
-
-# Enable and restart services
-systemctl enable ssh
-systemctl enable sshd
-systemctl restart ssh
-systemctl restart sshd
 ```
 ## Individual Service
 - Get it set up according to your own checklist
+## Run [ssh_keys.sh](../scripts/ssh_keys.sh)
 ## Continual Backups
-- Edit `/etc/environment`
-	- Remove anything malicious
-	- Ensure sensible PATH
-```
-TEAM_NUM="<team_number>"
-```
-- Get backup key
-	- `scp backups@192.168.${TEAM_NUM}.15:~/backup_key ~`
-- Move SSH key #fix by tossing into init remote backup
-
-- Backup script (run w/ sudo) #fix 
+- Backup script (run w/ sudo) 
 	- Add any important directories
