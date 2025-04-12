@@ -1,0 +1,14 @@
+$TTL	600
+@	IN	SOA	ridgemark.team2.ncaecybergames.org root.localhost (
+				    1		 ; SERIAL
+				    3h	; REFRESH
+				    1h	; RETRY
+				    1w  ; EXPIRE
+				    1h )	; MINIMUM
+
+@  IN		NS	ridgemark
+ridgemark	IN A	172.18.13.2
+www			IN A	172.18.13.2
+ns1			IN A	172.18.13.2
+shell   IN A  172.18.14.2
+files   IN A  172.18.14.2
