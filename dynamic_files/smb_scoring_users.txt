@@ -2,7 +2,6 @@ benjamin_franklin
 alexander_hamilton
 john_adams
 theodore_roosevelt
-franklin_d
 winston_churchill
 florence_nightingale
 eleanor_roosevelt
