@@ -31,7 +31,7 @@ network:
 ```
 - White space is 2 spaces
 - `netplan apply`
-## Centos
+## CentOS/Rocky
 - Directory: `/etc/sysconfig/network-scripts/`
 - File exists for each interface (e.g. `/etc/sysconfig/network-scripts/ifcfg-eth0`)
 - Basic structure of the file already exists, but some fields need added or changed
