@@ -66,14 +66,9 @@ then
     echo "You must run this script with sudo!"
     exit 1
 fi
-# Makes sure environment variables are set
-if [ -z ${TEAM_NUM} ]
-then
-	echo "You must set TEAM_NUM environment variable in /etc/environment!"
-	exit 1
-fi
 
 # Declare Variables
+TEAM_NUM="2"
 BACKUP_SERVER="backups@192.168.${TEAM_NUM}.15:~/backups"
 REMOTE_DIR="${BACKUP_SERVER}/${HOSTNAME}"
 LOCAL_DIR="/root/backups"
