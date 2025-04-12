@@ -1,0 +1,23 @@
+zone "team2.ncaecybergames.org" IN {
+	type master;
+	file "/var/named/zones/team2.ncaecybergames.org";
+	allow-update { none; };
+};
+
+zone "18.172.in-addr.arpa" IN {
+	type master;
+	file "/var/named/zones/172.18.rev";
+	allow-update { none; };
+};
+
+zone "team2.net" IN {
+	type master;
+	file "/var/named/zones/team2.net";
+	allow-update { none; };
+};
+
+zone "168.192.in-addr.arpa" IN {
+	type master;
+	file "/var/named/zones/192.168.rev";
+	allow-update { none; };
+};
