@@ -1,0 +1,13 @@
+$TTL	600
+@	IN	SOA	rigdemark.team2.ncaecybergames.org. root.localhost. (
+				1	  ; SERIAL
+				3h	; REFRESH
+				1h		; RETRY
+				1w	; EXPIRE
+				1h )	; MINIMUM
+
+@		IN	NS	rigdemark.team2.ncaecybergames.org.
+2.13	IN PTR	ns1.team2.ncaecybergames.org.
+2.13	IN PTR	www.team2.ncaecybergames.org.
+2.14	IN PTR	shell.team2.ncaecybergames.org.
+2.14  IN PTR  files.team2.ncaecybergames.org.
