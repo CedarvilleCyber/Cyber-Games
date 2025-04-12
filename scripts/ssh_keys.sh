@@ -21,7 +21,7 @@ then
     exit 1
 fi
 
-cd ~/Cyber-Games
+cd /home/blueteam/Cyber-Games
 # Add scoring SSH key to each scoring user
 for user in $(./dynamic_files/scoring_users.txt); do
     add_key ./dynamic_files/scoring_key.pub $user
