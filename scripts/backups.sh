@@ -80,10 +80,10 @@ then
 	mkdir /root/backups
 fi
 # Ensure SSH key exists
-if [ ! -e ${SSH_KEY} ]
-then
-	init_remote_backup
-fi
+#if [ ! -e ${SSH_KEY} ]
+#then
+#	init_remote_backup
+#fi
 
 local_backup /etc
 local_backup /home
@@ -92,4 +92,4 @@ local_backup /lib/systemd
 local_backup /usr/bin
 local_backup /usr/sbin
 
-remote_backup
+#remote_backup
