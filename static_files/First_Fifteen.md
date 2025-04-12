@@ -48,8 +48,7 @@ grep -w blueteam /etc/group
 # Harden SSH
 sudo vi /etc/ssh/sshd_config
 
-# Optional order: Service, Online, SSH: More initial points
-#               : Online, SSH, Service: Faster hardening
+# Optional order: Online, SSH, Service: Faster hardening
 # Service is set according to your own checklist
 # Online is Networking according to your machine
 # Once Networking is set up, the floodgates open (including Red Team)
