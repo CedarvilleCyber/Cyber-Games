@@ -18,6 +18,14 @@ SCORING_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCcM4aDj8Y4COv+f8bd2WsrIynlbRG
 # Copy/paste public keys below. Format: "ssh-rsa/ssh-ed25519 AAAAA... comment"
 
 KIERAN_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICqdma6oGDS8cqEgA+2kFwQaKZ64/Zo+h4AngQxj6mpt kieranklukas@cedarville.edu"
+DAVID_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBpsK7SawD1oUPJt+wg9Zozygy5G8LUcTn9MUZ7nxw9U david"
+KALEB_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFTx+ePBnQHZzHx4Tre1faoT1Kofn4ZA4HbKgo2mjhdn kalebkorner@Kalebs-MacBook-Pro.local"
+NATHAN_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINpKIhN7knpnqlOB2vXRlrc+f76pR1T4F165IkFVDVjw nwkar@AnnoyingLaptop"
+JOE_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPOTGLUg1PeA1rP+c0fh9S+I2k6jNpcQDGGfRKpStsr1 josep@JoeSystem"
+ABBY_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICTUSqi8BYVgUWPmAITcKmfdT2bzpWroUU/4ddJqf5nr awurster232@cedarville.edu"
+NOAH_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJf7gez/H6qjOOPnGeyKZ08f3Ax89KZ4/F9MaeM8BXws nmmar@Kearney"
+DANIEL_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJguU0jBNg+7G6cMMXK8SX8IwfSPx6p2qcPAvwj2g+Q+ danie@DB-Lenovo"
+MICAH_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPbtiN8k4yVhmcVUmwvGkGwE+Nw01O9ZeSOQklVPWqnX micah@WindowReMi"
 
 # Add more team member keys here:
 # NEWKEY="ssh-rsa AAAAB3... user@example.com"
@@ -26,6 +34,14 @@ KIERAN_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICqdma6oGDS8cqEgA+2kFwQaKZ64/Zo+
 # Add team member keys to this array (uncomment and add as needed):
 TEAM_KEYS=(
     "$KIERAN_KEY"
+    "$DAVID_KEY"
+    "$KALEB_KEY"
+    "$NATHAN_KEY"
+    "$JOE_KEY"
+    "$ABBY_KEY"
+    "$NOAH_KEY"
+    "$DANIEL_KEY"
+    "$MICAH_KEY"
     # "$NEWKEY"
     # "$NEWKEY2"
 )
