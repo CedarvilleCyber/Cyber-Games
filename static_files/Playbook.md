@@ -86,8 +86,9 @@ curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scr
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/06_file_integrity.sh | sudo bash
 ```
 
-**Script 07 - Log Monitoring** - Centralized logging and real-time security alerts
+**Script 07 - HIDS & Intrusion Detection** - Falco runtime detection + AIDE + instant ntfy alerts
 ```bash
+# Prompts for ntfy topic, or set with: NTFY_TOPIC=blueteam-alerts
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/07_log_monitoring.sh | sudo bash
 ```
 
@@ -105,6 +106,55 @@ curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scr
 ```bash
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/10_final_audit.sh | sudo bash
 ```
+
+## Optional Scripts (@ prefix = run anytime)
+
+**@gravwell_setup** - Add centralized logging to Gravwell (run AFTER script 07)
+```bash
+# Prompts for Gravwell host/secret, or set with: GRAVWELL_HOST=10.0.0.5 GRAVWELL_SECRET=secret
+curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/@gravwell_setup.sh | sudo bash
+```
+
+## Script 07 - HIDS Details
+
+**What it deploys:**
+- **inotifywait file watcher** - Instant ntfy alerts on changes to `/etc/passwd`, `/etc/shadow`, `/etc/sudoers`, SSH configs, cron files, systemd services
+- **Falco runtime detection** - eBPF-based behavioral monitoring with 12 competition rules:
+  - Reverse shells, webshells, bind shells
+  - Attacker tools (nmap, hydra, sqlmap, linpeas, etc.)
+  - Persistence mechanisms (cron, systemd, SSH keys)
+  - User/group modifications
+  - Suspicious downloads to `/tmp`
+  - Kernel module loading (rootkit indicator)
+  - Sensitive file reads by non-root
+  - Base64 encoding (obfuscation)
+- **AIDE file integrity** - Periodic scans every 10 minutes, monitors system binaries, configs, web roots
+
+**Deployment time:** ~5 minutes (AIDE baseline builds in background)
+
+**Before competition:**
+1. Subscribe all team phones to ntfy topic: Install ntfy app → subscribe to your topic
+2. Test alerts: `curl -d "test alert" https://ntfy.sh/your-topic`
+3. Filter noise: Subscribe with `?priority=high,urgent` to only see critical alerts
+
+**During competition:**
+```bash
+# Quick status checks
+systemctl status hids-filewatcher falco
+tail -f /var/log/falco/events.log     # Watch Falco detections in real-time
+journalctl -u falco -f                 # Falco service logs
+
+# Manual AIDE check
+/usr/local/bin/aide-check-ntfy.sh
+
+# Rebuild AIDE baseline after intentional changes
+aideinit && cp /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+```
+
+**Alert examples you'll receive:**
+- `⚠ File Change on webserver1: MODIFY: /etc/passwd`
+- `🚨 Falco [db-server]: Shell Spawned from Web Server`
+- `🔍 AIDE Alert [app-server]: Changed files: /usr/bin/ps, /etc/crontab`
 
 ## SSH Lockdown Priority Tasks
 
@@ -145,6 +195,13 @@ htop
 ss -tulpn | grep LISTEN
 tail -f /var/log/auth.log
 journalctl -f
+
+# HIDS monitoring (if script 07 deployed)
+tail -f /var/log/falco/events.log              # Falco detections
+journalctl -u falco -f                         # Falco service logs
+journalctl -u hids-filewatcher -f              # File watcher status
+systemctl status falco hids-filewatcher        # Check HIDS services
+/usr/local/bin/aide-check-ntfy.sh              # Manual AIDE scan
 
 # Security checks
 w                    # Active sessions
