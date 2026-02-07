@@ -370,7 +370,7 @@ echo "    UID 0 accounts (only root should exist):"
 awk -F: '$3 == 0 {print "       " $1}' /etc/passwd
 
 echo "    SUID files in temp directories:"
-SUID_TEMP=$(find /tmp /var/tmp /dev/shm -perm -4000 -type f 2>/dev/null)
+SUID_TEMP=$(find /tmp /var/tmp /dev/shm /opt -perm -4000 -type f 2>/dev/null)
 if [[ -n "$SUID_TEMP" ]]; then
     echo "$SUID_TEMP" | while read -r f; do
         echo "       [!] $f"

@@ -31,7 +31,7 @@ This outputs a single line you copy-paste into each Proxmox console. Run it ever
 | 9 | Disables all `sshd_config.d/*.conf` overrides |
 | 10 | Restarts sshd |
 | 11 | Validates config syntax and prints status |
-| 12 | Security audit — flags UID 0 accounts, removes SUID files from `/tmp`/`/var/tmp`/`/dev/shm`, prints listening ports, lists all aliases and functions for manual review |
+| 12 | Security audit — flags UID 0 accounts, removes SUID files from `/tmp`/`/var/tmp`/`/dev/shm`/`/opt`, prints listening ports, lists all aliases and functions for manual review |
 
 ### Protected users (never killed/locked)
 
