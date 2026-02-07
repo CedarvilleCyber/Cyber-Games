@@ -113,10 +113,47 @@ echo ""
 
 echo "[1] Setting up blueteam user and passwords"
 
-read -sp "    Enter password for root: " ROOT_PW
-echo ""
-read -sp "    Enter password for blueteam: " BLUETEAM_PW
-echo ""
+# Check if passwords provided via environment variables
+if [[ -n "${ROOT_PASSWORD:-}" && -n "${BLUETEAM_PASSWORD:-}" ]]; then
+    ROOT_PW="$ROOT_PASSWORD"
+    BLUETEAM_PW="$BLUETEAM_PASSWORD"
+    echo "    -> Using passwords from environment variables"
+# Check if we can read from terminal (not piped)
+elif [[ -t 0 ]]; then
+    read -sp "    Enter password for root: " ROOT_PW < /dev/tty
+    echo ""
+    read -sp "    Enter password for blueteam: " BLUETEAM_PW < /dev/tty
+    echo ""
+else
+    # Script is piped - generate random passwords
+    echo "    -> Script piped: generating random passwords"
+    ROOT_PW=$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-16)
+    BLUETEAM_PW=$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-16)
+
+    echo ""
+    echo "╔════════════════════════════════════════════════════════════════╗"
+    echo "║                                                                ║"
+    echo "║         GENERATED PASSWORDS - COPY/SCREENSHOT NOW!            ║"
+    echo "║                                                                ║"
+    echo "╠════════════════════════════════════════════════════════════════╣"
+    echo "║                                                                ║"
+    echo "║  root password:     ${ROOT_PW}                  ║"
+    echo "║  blueteam password: ${BLUETEAM_PW}                  ║"
+    echo "║                                                                ║"
+    echo "╚════════════════════════════════════════════════════════════════╝"
+    echo ""
+    echo "    [!] Passwords NOT saved to disk for security"
+    echo "    [!] Copy them NOW - waiting 10 seconds..."
+    echo ""
+
+    sleep 10  # Give time to screenshot/copy
+fi
+
+# Validate passwords are not empty
+if [[ -z "$ROOT_PW" || -z "$BLUETEAM_PW" ]]; then
+    echo "[!] ERROR: Passwords cannot be empty"
+    exit 1
+fi
 
 if ! id "blueteam" &>/dev/null; then
     useradd -m -s /bin/bash blueteam
