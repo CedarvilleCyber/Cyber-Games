@@ -12,7 +12,23 @@ set -euo pipefail
 
 SCORING_KEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCcM4aDj8Y4COv+f8bd2WsrIynlbRGgDj2+q9aBeW1Umj5euxnO1vWsjfkpKnyE/ORsI6gkkME9ojAzNAPquWMh2YG+n11FB1iZl2S6yuZB7dkVQZSKpVYwRvZv2RnYDQdcVnX9oWMiGrBWEAi4jxcYykz8nunaO2SxjEwzuKdW8lnnh2BvOO9RkzmSXIIdPYgSf8bFFC7XFMfRrlMXlsxbG3u/NaFjirfvcXKexz06L6qYUzob8IBPsKGaRjO+vEdg6B4lH1lMk1JQ4GtGOJH6zePfB6Gf7rp31261VRfkpbpaDAznTzh7bgpq78E7SenatNbezLDaGq3Zra3j53u7XaSVipkW0S3YcXczhte2J9kvo6u6s094vrcQfB9YigH4KhXpCErFk08NkYAEJDdqFqXIjvzsro+2/EW1KKB9aNPSSM9EZzhYc+cBAl4+ohmEPej1m15vcpw3k+kpo1NC2rwEXIFxmvTme1A2oIZZBpgzUqfmvSPwLXF0EyfN9Lk= SCORING KEY DO NOT REMOVE"
 
+# ============================================================================
+# TEAM SSH KEYS — Add your team member keys here
+# ============================================================================
+# Copy/paste public keys below. Format: "ssh-rsa/ssh-ed25519 AAAAA... comment"
+
 KIERAN_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICqdma6oGDS8cqEgA+2kFwQaKZ64/Zo+h4AngQxj6mpt kieranklukas@cedarville.edu"
+
+# Add more team member keys here:
+# NEWKEY="ssh-rsa AAAAB3... user@example.com"
+# NEWKEY2="ssh-ed25519 AAAAC3... user2@example.com"
+
+# Add team member keys to this array (uncomment and add as needed):
+TEAM_KEYS=(
+    "$KIERAN_KEY"
+    # "$NEWKEY"
+    # "$NEWKEY2"
+)
 
 SCORING_USERS=(
     alexander_hamilton archimedes aristotle benjamin_franklin
@@ -276,8 +292,14 @@ for user in "${SCORING_USERS[@]}"; do
     fi
 done
 
-add_key_inline "$KIERAN_KEY" "blueteam"
-echo "    -> blueteam: kieran key"
+# Deploy all team member keys to blueteam user
+for team_key in "${TEAM_KEYS[@]}"; do
+    if [[ -n "$team_key" ]]; then
+        add_key_inline "$team_key" "blueteam"
+        key_comment=$(echo "$team_key" | awk '{print $NF}')
+        echo "    -> blueteam: $key_comment"
+    fi
+done
 
 # ============================================================================
 # 7. KILL NON-PROTECTED SESSIONS & REVERSE SHELLS
