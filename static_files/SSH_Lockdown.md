@@ -22,7 +22,7 @@ This outputs a single line you copy-paste into each Proxmox console. Run it ever
 |------|--------|
 | 1 | **Prompts for root & blueteam passwords** (typed into Proxmox console — never stored in script), creates `blueteam` user if missing, adds to sudo/wheel |
 | 2 | Backs up current `sshd_config` |
-| 3 | Writes hardened `sshd_config` (pubkey-only, no root login, no password auth, no forwarding, `AllowUsers` whitelist, restricted ciphers/MACs/kex, rate limiting) |
+| 3 | Writes hardened `sshd_config` (pubkey-only, no root login, no password auth, no forwarding, `AllowUsers` whitelist, restricted ciphers/MACs/kex, rate limiting). Locks down critical file permissions (`/etc/passwd` 644, `/etc/shadow` 640, `/etc/group` 644, `sshd_config` 600, `/etc/sudoers` 600) |
 | 4 | Sudoers cleanup — replaces `/etc/sudoers` (root + sudo/wheel only), disables `/etc/sudoers.d/*`, strips non-protected users from sudo/wheel group |
 | 5 | Nukes `.ssh/` for all non-protected users, removes `authorized_keys2` everywhere, removes planted private keys (skips protected users) |
 | 6 | Deploys scoring key to scoring users, Kieran's key to `blueteam` |

@@ -154,6 +154,23 @@ done
 echo "$ALLOW_LINE" >> "$SSHD_CONFIG"
 echo "    -> $ALLOW_LINE"
 
+echo "[3b] Locking down critical file permissions"
+chmod 644 /etc/passwd
+chown root:root /etc/passwd
+chmod 640 /etc/shadow
+chown root:shadow /etc/shadow 2>/dev/null || chown root:root /etc/shadow
+chmod 644 /etc/group
+chown root:root /etc/group
+chmod 600 /etc/ssh/sshd_config
+chown root:root /etc/ssh/sshd_config
+chmod 600 /etc/sudoers
+chown root:root /etc/sudoers
+echo "    -> /etc/passwd:      644 root:root"
+echo "    -> /etc/shadow:      640 root:shadow"
+echo "    -> /etc/group:       644 root:root"
+echo "    -> /etc/ssh/sshd_config: 600 root:root"
+echo "    -> /etc/sudoers:     600 root:root"
+
 # ============================================================================
 # 4. SUDOERS CLEANUP
 # ============================================================================
