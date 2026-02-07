@@ -47,12 +47,24 @@ TEAM_KEYS=(
 )
 
 SCORING_USERS=(
-    alexander_hamilton archimedes aristotle benjamin_franklin
-    charles_darwin eleanor_roosevelt florence_nightingale friedrich_nietzsche
-    hippocrates immanuel_kant jean_jacques_rousseau john_adams
-    louis_xiv mahatma_gandhi marie_antoinette mother_teresa
-    peter_the_great plato rene_descartes sigmund_freud
-    socrates theodore_roosevelt voltaire winston_churchill
+  clancy
+  todd_k
+  torch_bearer
+  ned
+  trash
+  blurry_face
+  nico
+  keons
+  sacarvo
+  listo
+  lisdn
+  reisdro
+  vetomo
+  nills
+  vialists
+  simone_weil
+  henri_cartan
+  claude_chevalley
 )
 
 PROTECTED_USERS=(
