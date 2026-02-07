@@ -5,7 +5,7 @@
 ### Generate the paste-ready one-liner (run on your laptop)
 
 ```bash
-echo "echo '$(base64 < scripts/ssh_lockdown_standalone.sh)' | base64 -d | sudo bash"
+echo "echo '$(base64 < scripts/01_ssh_lockdown.sh)' | base64 -d | sudo bash"
 ```
 
 This outputs a single line you copy-paste into each Proxmox console. Run it every time you update `ssh_lockdown_standalone.sh` to get a fresh payload.
