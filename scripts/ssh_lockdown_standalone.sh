@@ -385,6 +385,34 @@ echo "    Listening ports:"
 ss -tulpn 2>/dev/null | grep LISTEN | awk '{printf "       %s %s\n", $5, $7}' | sort -u
 
 echo ""
+echo "    Listing all aliases and functions for manual review:"
+for homedir in /root /home/*; do
+    [[ -d "$homedir" ]] || continue
+    username=$(basename "$homedir")
+    for rcfile in .bashrc .bash_profile .profile .bash_login .bash_logout; do
+        filepath="$homedir/$rcfile"
+        [[ -f "$filepath" ]] || continue
+        ALIASES=$(grep -n '^[[:space:]]*alias\|^[[:space:]]*function\|^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*()' "$filepath" 2>/dev/null)
+        if [[ -n "$ALIASES" ]]; then
+            echo "       $filepath:"
+            echo "$ALIASES" | while read -r line; do
+                echo "           $line"
+            done
+        fi
+    done
+done
+for sysfile in /etc/bash.bashrc /etc/profile /etc/profile.d/*.sh /etc/environment; do
+    [[ -f "$sysfile" ]] || continue
+    ALIASES=$(grep -n '^[[:space:]]*alias\|^[[:space:]]*function\|^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*()' "$sysfile" 2>/dev/null)
+    if [[ -n "$ALIASES" ]]; then
+        echo "       $sysfile:"
+        echo "$ALIASES" | while read -r line; do
+            echo "           $line"
+        done
+    fi
+done
+
+echo ""
 echo "========================================="
 echo "  LOCKDOWN COMPLETE"
 echo "========================================="
