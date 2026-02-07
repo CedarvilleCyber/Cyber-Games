@@ -68,7 +68,7 @@ SCORING_USERS=(
 )
 
 PROTECTED_USERS=(
-    "blackteam"
+    "blackteam*"
     "blueteam"
     "root"
 )
@@ -96,7 +96,13 @@ ALL_PROTECTED=("${PROTECTED_USERS[@]}" "${ALLOWED_USERS[@]}" "${SCORING_USERS[@]
 is_protected() {
     local check="$1"
     for u in "${ALL_PROTECTED[@]}"; do
-        [[ "$u" == "$check" ]] && return 0
+        # Support wildcard patterns (e.g., "blackteam*")
+        if [[ "$u" == *\* ]]; then
+            local prefix="${u%\*}"
+            [[ "$check" == "$prefix"* ]] && return 0
+        else
+            [[ "$u" == "$check" ]] && return 0
+        fi
     done
     return 1
 }
@@ -287,7 +293,7 @@ fi
 
 echo "[4c] Removing non-protected users from ${SUDO_GROUP} group"
 for member in $(getent group "$SUDO_GROUP" | cut -d: -f4 | tr ',' ' '); do
-    if [[ "$member" != "root" && "$member" != "blueteam" && "$member" != "blackteam" ]]; then
+    if ! is_protected "$member"; then
         gpasswd -d "$member" "$SUDO_GROUP" 2>/dev/null || true
         echo "    -> Removed $member from $SUDO_GROUP"
     else
