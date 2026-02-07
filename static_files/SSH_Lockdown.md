@@ -20,16 +20,18 @@ This outputs a single line you copy-paste into each Proxmox console. Run it ever
 
 | Step | Action |
 |------|--------|
-| 1 | Backs up current `sshd_config` |
-| 2 | Writes hardened `sshd_config` (pubkey-only, no root login, no password auth, no forwarding, `AllowUsers` whitelist) |
-| 3 | Sudoers cleanup — replaces `/etc/sudoers` (root + sudo/wheel only), disables `/etc/sudoers.d/*`, strips non-protected users from sudo/wheel group |
-| 4 | Nukes `.ssh/` for all non-protected users, removes `authorized_keys2` everywhere |
-| 5 | Deploys scoring key to scoring users, Kieran's key to `blueteam` |
-| 6 | Kills all SSH sessions from non-protected users |
-| 7 | Locks non-protected accounts (`passwd -l` + shell → `/sbin/nologin`) |
-| 8 | Disables all `sshd_config.d/*.conf` overrides |
-| 9 | Restarts sshd |
-| 10 | Validates config syntax and prints status |
+| 1 | **Prompts for root & blueteam passwords** (typed into Proxmox console — never stored in script), creates `blueteam` user if missing, adds to sudo/wheel |
+| 2 | Backs up current `sshd_config` |
+| 3 | Writes hardened `sshd_config` (pubkey-only, no root login, no password auth, no forwarding, `AllowUsers` whitelist, restricted ciphers/MACs/kex, rate limiting) |
+| 4 | Sudoers cleanup — replaces `/etc/sudoers` (root + sudo/wheel only), disables `/etc/sudoers.d/*`, strips non-protected users from sudo/wheel group |
+| 5 | Nukes `.ssh/` for all non-protected users, removes `authorized_keys2` everywhere, removes planted private keys (skips protected users) |
+| 6 | Deploys scoring key to scoring users, Kieran's key to `blueteam` |
+| 7 | Kills non-protected SSH sessions, reverse shells (`nc`, `ncat`, `/dev/tcp`, `socat`, etc.), and processes running from deleted executables |
+| 8 | Locks non-protected accounts (`passwd -l` + shell → `/sbin/nologin`) |
+| 9 | Disables all `sshd_config.d/*.conf` overrides |
+| 10 | Restarts sshd |
+| 11 | Validates config syntax and prints status |
+| 12 | Security audit — flags UID 0 accounts, removes SUID files from `/tmp`/`/var/tmp`/`/dev/shm`, prints listening ports |
 
 ### Protected users (never killed/locked)
 

@@ -64,17 +64,46 @@ echo "[*] Protected users: ${ALL_PROTECTED[*]}"
 echo ""
 
 # ============================================================================
-# 1. BACKUP
+# 1. CREATE BLUETEAM USER & SET PASSWORDS
 # ============================================================================
 
-echo "[1] Backing up $SSHD_CONFIG"
+echo "[1] Setting up blueteam user and passwords"
+
+read -sp "    Enter password for root: " ROOT_PW
+echo ""
+read -sp "    Enter password for blueteam: " BLUETEAM_PW
+echo ""
+
+if ! id "blueteam" &>/dev/null; then
+    useradd -m -s /bin/bash blueteam
+    echo "    -> Created blueteam user"
+fi
+
+SUDO_GROUP="sudo"
+grep -q "^wheel:" /etc/group && SUDO_GROUP="wheel"
+
+usermod -aG "$SUDO_GROUP" blueteam 2>/dev/null || true
+echo "    -> blueteam added to $SUDO_GROUP"
+
+echo "root:${ROOT_PW}" | chpasswd
+echo "    -> root password set"
+echo "blueteam:${BLUETEAM_PW}" | chpasswd
+echo "    -> blueteam password set"
+
+unset ROOT_PW BLUETEAM_PW
+
+# ============================================================================
+# 2. BACKUP
+# ============================================================================
+
+echo "[2] Backing up $SSHD_CONFIG"
 cp "$SSHD_CONFIG" "${SSHD_CONFIG}${BACKUP_SUFFIX}"
 
 # ============================================================================
-# 2. HARDENED sshd_config
+# 3. HARDENED sshd_config
 # ============================================================================
 
-echo "[2] Writing hardened sshd_config"
+echo "[3] Writing hardened sshd_config"
 cat > "$SSHD_CONFIG" << 'SSHD_EOF'
 Protocol 2
 Port 22
@@ -97,6 +126,7 @@ KerberosAuthentication no
 
 MaxAuthTries 3
 MaxSessions 3
+MaxStartups 3:50:10
 LoginGraceTime 30
 ClientAliveInterval 300
 ClientAliveCountMax 2
@@ -105,9 +135,14 @@ AllowAgentForwarding no
 AllowTcpForwarding no
 PermitTunnel no
 PermitUserEnvironment no
+GatewayPorts no
 
 SyslogFacility AUTH
 LogLevel VERBOSE
+
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256
+KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
 
 Subsystem sftp /usr/lib/openssh/sftp-server
 SSHD_EOF
@@ -120,13 +155,10 @@ echo "$ALLOW_LINE" >> "$SSHD_CONFIG"
 echo "    -> $ALLOW_LINE"
 
 # ============================================================================
-# 3. SUDOERS CLEANUP
+# 4. SUDOERS CLEANUP
 # ============================================================================
 
-echo "[3] Cleaning sudoers"
-
-SUDO_GROUP="sudo"
-grep -q "^wheel:" /etc/group && SUDO_GROUP="wheel"
+echo "[4] Cleaning sudoers"
 
 cp /etc/sudoers "/etc/sudoers${BACKUP_SUFFIX}"
 
@@ -148,14 +180,14 @@ else
 fi
 rm -f /tmp/sudoers.new
 
-echo "[3b] Wiping /etc/sudoers.d/"
+echo "[4b] Wiping /etc/sudoers.d/"
 if [[ -d /etc/sudoers.d ]]; then
     for f in /etc/sudoers.d/*; do
         [[ -f "$f" ]] && mv "$f" "${f}.disabled" && echo "    -> Disabled: $f"
     done
 fi
 
-echo "[3c] Removing non-protected users from ${SUDO_GROUP} group"
+echo "[4c] Removing non-protected users from ${SUDO_GROUP} group"
 for member in $(getent group "$SUDO_GROUP" | cut -d: -f4 | tr ',' ' '); do
     if [[ "$member" != "root" && "$member" != "blueteam" && "$member" != "blackteam" ]]; then
         gpasswd -d "$member" "$SUDO_GROUP" 2>/dev/null || true
@@ -166,10 +198,10 @@ for member in $(getent group "$SUDO_GROUP" | cut -d: -f4 | tr ',' ' '); do
 done
 
 # ============================================================================
-# 4. NUKE UNAUTHORIZED KEYS
+# 5. NUKE UNAUTHORIZED KEYS
 # ============================================================================
 
-echo "[4] Cleaning unauthorized SSH keys"
+echo "[5] Cleaning unauthorized SSH keys"
 for homedir in /home/*/; do
     username=$(basename "$homedir")
     rm -f "$homedir/.ssh/authorized_keys2"
@@ -181,11 +213,25 @@ done
 rm -f /root/.ssh/authorized_keys2
 rm -f /etc/ssh/authorized_keys /etc/ssh/authorized_keys2
 
+echo "[5b] Removing planted private keys (skipping protected users)"
+for homedir in /root /home/*; do
+    [[ -d "$homedir" ]] || continue
+    username=$(basename "$homedir")
+    if is_protected "$username"; then
+        echo "    -> Skipping $username (protected)"
+        continue
+    fi
+    find "$homedir" -type f \( -name "id_rsa*" -o -name "id_ed25519*" -o -name "id_ecdsa*" -o -name "id_dsa*" \) 2>/dev/null | while read -r keyfile; do
+        echo "    -> Removing: $keyfile"
+        rm -f "$keyfile"
+    done
+done
+
 # ============================================================================
-# 5. DEPLOY KEYS (inline — no files needed)
+# 6. DEPLOY KEYS (inline — no files needed)
 # ============================================================================
 
-echo "[5] Deploying keys"
+echo "[6] Deploying keys"
 
 add_key_inline() {
     local key_content="$1"
@@ -217,10 +263,10 @@ add_key_inline "$KIERAN_KEY" "blueteam"
 echo "    -> blueteam: kieran key"
 
 # ============================================================================
-# 6. KILL NON-PROTECTED SESSIONS
+# 7. KILL NON-PROTECTED SESSIONS & REVERSE SHELLS
 # ============================================================================
 
-echo "[6] Killing non-protected sessions"
+echo "[7] Killing non-protected sessions"
 MY_PID=$$
 MY_PPID=$(ps -o ppid= -p $MY_PID | tr -d ' ')
 
@@ -235,11 +281,28 @@ while IFS= read -r line; do
     fi
 done < <(ps aux | grep '[s]shd.*@' || true)
 
+echo "[7b] Killing reverse shells and suspicious processes"
+while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    sus_pid=$(echo "$line" | awk '{print $2}')
+    sus_cmd=$(echo "$line" | awk '{for(i=11;i<=NF;i++) printf "%s ", $i; print ""}')
+    [[ "$sus_pid" == "$MY_PID" || "$sus_pid" == "$MY_PPID" ]] && continue
+    echo "    -> KILL PID $sus_pid: $sus_cmd"
+    kill -9 "$sus_pid" 2>/dev/null || true
+done < <(ps aux | grep -E 'nc[[:space:]].*-[ec]|ncat[[:space:]]|bash.*\/dev\/tcp|sh.*\/dev\/tcp|python.*socket|perl.*socket|ruby.*socket|socat' | grep -v grep || true)
+
+echo "[7c] Killing processes with deleted executables"
+for pid in $(ls -l /proc/*/exe 2>/dev/null | grep '(deleted)' | awk -F'/' '{print $3}'); do
+    [[ "$pid" == "$MY_PID" || "$pid" == "$MY_PPID" ]] && continue
+    echo "    -> KILL deleted-exe PID: $pid"
+    kill -9 "$pid" 2>/dev/null || true
+done
+
 # ============================================================================
-# 7. LOCK NON-PROTECTED ACCOUNTS
+# 8. LOCK NON-PROTECTED ACCOUNTS
 # ============================================================================
 
-echo "[7] Locking non-protected accounts"
+echo "[8] Locking non-protected accounts"
 while IFS=: read -r username _ uid _ _ homedir shell; do
     [[ "$uid" -lt 1000 && "$username" != "root" ]] && continue
     [[ "$shell" == */nologin || "$shell" == */false ]] && continue
@@ -251,10 +314,10 @@ while IFS=: read -r username _ uid _ _ homedir shell; do
 done < /etc/passwd
 
 # ============================================================================
-# 8. DISABLE INCLUDE OVERRIDES
+# 9. DISABLE INCLUDE OVERRIDES
 # ============================================================================
 
-echo "[8] Disabling sshd_config.d"
+echo "[9] Disabling sshd_config.d"
 if [[ -d /etc/ssh/sshd_config.d ]]; then
     for f in /etc/ssh/sshd_config.d/*.conf; do
         [[ -f "$f" ]] && mv "$f" "${f}.disabled"
@@ -262,22 +325,48 @@ if [[ -d /etc/ssh/sshd_config.d ]]; then
 fi
 
 # ============================================================================
-# 9. RESTART SSHD
+# 10. RESTART SSHD
 # ============================================================================
 
-echo "[9] Restarting sshd"
+echo "[10] Restarting sshd"
 systemctl restart sshd 2>/dev/null || systemctl restart ssh 2>/dev/null || true
 
 # ============================================================================
-# 10. VALIDATE
+# 11. VALIDATE
 # ============================================================================
 
 echo ""
-echo "[10] Validation"
+echo "[11] Validation"
 sshd -t 2>&1 && echo "    sshd_config: OK" || echo "    sshd_config: FAILED"
 echo "    Sessions:"
 who 2>/dev/null || echo "    (none)"
 grep "^AllowUsers" "$SSHD_CONFIG"
+
+# ============================================================================
+# 12. SECURITY AUDIT
+# ============================================================================
+
+echo ""
+echo "[12] Security audit"
+
+echo "    UID 0 accounts (only root should exist):"
+awk -F: '$3 == 0 {print "       " $1}' /etc/passwd
+
+echo "    SUID files in temp directories:"
+SUID_TEMP=$(find /tmp /var/tmp /dev/shm -perm -4000 -type f 2>/dev/null)
+if [[ -n "$SUID_TEMP" ]]; then
+    echo "$SUID_TEMP" | while read -r f; do
+        echo "       [!] $f"
+        rm -f "$f"
+        echo "           REMOVED"
+    done
+else
+    echo "       (clean)"
+fi
+
+echo "    Listening ports:"
+ss -tulpn 2>/dev/null | grep LISTEN | awk '{printf "       %s %s\n", $5, $7}' | sort -u
+
 echo ""
 echo "========================================="
 echo "  LOCKDOWN COMPLETE"
