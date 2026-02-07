@@ -1,6 +1,6 @@
 # Competition Playbook
 
-## Quick Reference
+## SSH Lockdown Quick Setup
 
 ### Generate the paste-ready one-liner (run on your laptop)
 
@@ -54,138 +54,78 @@ ALLOWED_USERS=(
 
 Then re-run the generator one-liner on your laptop to get an updated payload.
 
-### After internet is up
+## After Internet Access - Command Reference
 
-Alternative — pull and run directly from GitHub:
-
+**Script 01 - SSH Lockdown** - Complete system hardening, kill backdoors, deploy keys
 ```bash
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/01_ssh_lockdown.sh | sudo bash
 ```
 
-**Remember**: Take a snapshot immediately after the script completes.
-
-## After Internet Access - Additional Hardening
-
-Once internet is available, run additional hardening scripts in sequence:
-
-### Rapid Deployment
-
-```bash
-# Download and run all critical hardening scripts
-scripts=(02_fail2ban_deploy 03_kernel_hardening 04_firewall_lockdown 05_service_audit)
-for script in "${scripts[@]}"; do
-    curl -sSL "https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/${script}.sh" | sudo bash
-done
-```
-
-### Individual Scripts
-
-**Fail2ban (blocks attackers automatically)**:
+**Script 02 - Fail2ban** - Auto-ban brute force attackers, essential first defense
 ```bash
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/02_fail2ban_deploy.sh | sudo bash
 ```
 
-**Kernel hardening (sysctl security settings)**:
+**Script 03 - Kernel Hardening** - Disable dangerous protocols, prevent network exploits
 ```bash
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/03_kernel_hardening.sh | sudo bash
 ```
 
-**Firewall lockdown (UFW/firewalld)**:
+**Script 04 - Firewall** - Block unnecessary ports, monitor scoreboard closely after
 ```bash
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/04_firewall_lockdown.sh | sudo bash
 ```
 
-**Service audit (disable unnecessary services)**:
+**Script 05 - Service Audit** - Disable unnecessary services, reduce attack surface
 ```bash
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/05_service_audit.sh | sudo bash
 ```
 
-### Optional Enhancements (time permitting)
-
-**File integrity monitoring**:
+**Script 06 - File Integrity** - Monitor system files for unauthorized changes
 ```bash
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/06_file_integrity.sh | sudo bash
 ```
 
-**Local security monitoring**:
+**Script 07 - Log Monitoring** - Centralized logging and real-time security alerts
 ```bash
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/07_log_monitoring.sh | sudo bash
 ```
 
-**Web server hardening**:
+**Script 08 - Web Hardening** - Secure Apache/Nginx, scan for web shells (web servers only)
 ```bash
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/08_web_hardening.sh | sudo bash
 ```
 
-**Database hardening**:
+**Script 09 - Database Hardening** - Secure MySQL/PostgreSQL, change passwords (DB servers only)
 ```bash
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/09_database_hardening.sh | sudo bash
 ```
 
-**Final security audit**:
+**Script 10 - Final Audit** - Comprehensive security scan and vulnerability assessment
 ```bash
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/10_final_audit.sh | sudo bash
 ```
 
-## Competition Strategy
+## SSH Lockdown Priority Tasks
 
-### Timeline
-- **T+0:00**: SSH lockdown on all machines (Proxmox console)
-- **T+0:05**: Take snapshots, verify SSH access works
-- **T+0:10**: Deploy fail2ban + kernel hardening once internet is up
-- **T+0:20**: Firewall + service audit on critical machines
-- **T+0:30+**: Additional hardening scripts as time allows
+Run scripts 01-05 first - they provide the core security foundation.
 
-### Priority Order
-1. **Web servers** - highest attack target
-2. **Database servers** - contain sensitive data  
-3. **DNS servers** - critical infrastructure
-4. **Other services** - as time allows
-
-### Team Coordination
-- Person 1: Web servers
-- Person 2: Database servers
-- Person 3: DNS/infrastructure
-- Person 4: Monitor scoreboard, coordinate fixes
-- Person 5: Run enhancement scripts (06-10) on stable servers
-
-## Troubleshooting
+## Emergency Recovery
 
 ### SSH Lockout Recovery
-
-If script 01 locks you out:
-
 1. Use Proxmox console access
-2. Fix SSH config:
-   ```bash
-   nano /etc/ssh/sshd_config
-   # Add your username to AllowUsers line
-   systemctl restart sshd
-   ```
+2. Fix SSH config: `nano /etc/ssh/sshd_config`
+3. Add your username to `AllowUsers` line
+4. Restart: `systemctl restart sshd`
 
 ### Service Down Recovery
-
-If additional scripts break scored services:
-
-1. Check what broke:
-   ```bash
-   systemctl status SERVICE_NAME
-   tail -f /var/log/syslog
-   ```
-
-2. Revert recent changes:
-   ```bash
-   # Scripts create .backup files
-   cp /etc/service/config.backup /etc/service/config
-   systemctl restart SERVICE_NAME
-   ```
-
-3. Or restore from snapshot
+1. Check what broke: `systemctl status SERVICE_NAME`
+2. Check logs: `tail -f /var/log/syslog`
+3. Revert configs: `cp /etc/service/config.backup /etc/service/config`
+4. Restart service: `systemctl restart SERVICE_NAME`
+5. Or restore from snapshot
 
 ### Firewall Issues
-
-If firewall blocks scored services:
-
 ```bash
 # Check what's listening
 ss -tulpn | grep LISTEN
@@ -197,60 +137,22 @@ ufw allow PORT/tcp comment 'SERVICE_NAME'
 ufw status verbose
 ```
 
-## Essential Commands
+## Essential Monitoring Commands
 
-### Monitoring
 ```bash
-# Real-time system monitoring
+# Real-time monitoring
 htop
-
-# Network connections
 ss -tulpn | grep LISTEN
-
-# Recent authentication events  
 tail -f /var/log/auth.log
-
-# System logs
 journalctl -f
-```
 
-### Security Checks
-```bash
-# Active sessions
-w
-
-# Recent logins
-last
-
-# Failed login attempts
-grep "Failed password" /var/log/auth.log | tail -10
-
-# Listening services
+# Security checks
+w                    # Active sessions
+last                 # Recent logins
 systemctl list-units --type=service --state=running
-```
 
-### Quick Fixes
-```bash
-# Restart SSH safely
+# Quick service management
 systemctl restart sshd
-
-# Reload firewall
-ufw reload
-
-# Check service status
 systemctl status SERVICE_NAME
-
-# View service logs
 journalctl -u SERVICE_NAME -f
 ```
-
-### Files
-
-| File | Purpose |
-|------|---------|
-| `scripts/01_ssh_lockdown.sh` | Self-contained — all keys/users embedded, no file dependencies |
-| `scripts/02_fail2ban_deploy.sh` | Automated intrusion prevention |
-| `scripts/03_kernel_hardening.sh` | Kernel security settings |
-| `scripts/04_firewall_lockdown.sh` | Network security |
-| `scripts/05_service_audit.sh` | Service management |
-| `scripts/06-10_*.sh` | Additional hardening enhancements |
