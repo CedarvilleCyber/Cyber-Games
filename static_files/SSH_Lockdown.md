@@ -14,7 +14,8 @@ This outputs a single line you copy-paste into each Proxmox console. Run it ever
 
 1. Log in as root
 2. Paste the one-liner from above
-3. Done — box is locked in ~5 seconds
+3. **TAKE A SNAPSHOT** — critical for quick recovery if red team breaks something
+4. Done — box is locked in ~5 seconds
 
 ### What the lockdown does
 
@@ -60,6 +61,8 @@ Alternative — pull and run directly from GitHub:
 ```bash
 curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/ssh_lockdown_standalone.sh | sudo bash
 ```
+
+**Remember**: Take a snapshot immediately after the script completes.
 
 ### Files
 
