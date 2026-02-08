@@ -91,7 +91,7 @@ if [[ $(id -u) -ne 0 ]]; then
     exit 1
 fi
 
-ALL_PROTECTED=("${PROTECTED_USERS[@]}" "${ALLOWED_USERS[@]}" "${SCORING_USERS[@]}")
+ALL_PROTECTED=("${PROTECTED_USERS[@]}" ${ALLOWED_USERS[@]+"${ALLOWED_USERS[@]}"} "${SCORING_USERS[@]}")
 
 is_protected() {
     local check="$1"
@@ -139,12 +139,12 @@ else
     echo ""
     echo "╔════════════════════════════════════════════════════════════════╗"
     echo "║                                                                ║"
-    echo "║         GENERATED PASSWORDS - COPY/SCREENSHOT NOW!            ║"
+    echo "║         GENERATED PASSWORDS - COPY/SCREENSHOT NOW!             ║"
     echo "║                                                                ║"
     echo "╠════════════════════════════════════════════════════════════════╣"
     echo "║                                                                ║"
-    echo "║  root password:     ${ROOT_PW}                  ║"
-    echo "║  blueteam password: ${BLUETEAM_PW}                  ║"
+    echo "║  root password:     ${ROOT_PW}                           ║"
+    echo "║  blueteam password: ${BLUETEAM_PW}                           ║"
     echo "║                                                                ║"
     echo "╚════════════════════════════════════════════════════════════════╝"
     echo ""
