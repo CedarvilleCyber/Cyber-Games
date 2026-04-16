@@ -36,7 +36,7 @@ echo "**CHECK 'TAINT' KERNEL MESSAGES AND REMOVE MODULES IF NECESSARY!!**"
 echo ""
 # REMOVE all immutable files
 echo "REMOVING IMMUTABLE FILES FROM /etc AND /usr (MAY TAKE A SECOND)..."
-sudo chattr -R -i /etc /usr 2>/dev/null
+sudo chattr -R -ia /etc /usr 2>/dev/null
 echo "->DONE"
 echo ""
 # CHANGE default shell for current user to /bin/bash (for saftey)
