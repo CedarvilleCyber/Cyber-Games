@@ -17,6 +17,7 @@ This directory exists to store scripts that will be run on competition day.
 
 ### Optional Scripts (@ prefix = run anytime)
 - [@gravwell_setup.sh](#gravwell_setupsh) - Centralized logging to Gravwell
+- [@init_overview.sh](#init_overviewsh) - Initial machine cleaning (crontabs, immutability, /tmp)
 
 ### Legacy Scripts
 - [backups.sh](#backupssh) - Local and remote backups of important directories
