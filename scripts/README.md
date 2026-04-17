@@ -10,6 +10,8 @@ Scripts for hardening and auditing Linux machines during NCAE cyber competitions
 - [03_audit.sh](#03_auditsh) - Service lockdown, full security audit
 
 ### Optional Scripts (@ prefix = run anytime)
+- [@dn_install.sh](#dn_installsh) - defined.net dnclient one-step install & enroll
+- [@dn_enroll.sh](#dn_enrollsh) - defined.net CTF mass host enrollment
 - [@gravwell_setup.sh](#gravwell_setupsh) - Centralized logging to Gravwell
 - [@init_overview.sh](#init_overviewsh) - Initial machine cleaning (crontabs, immutability, /tmp)
 - [@ftp_setup.sh](#ftp_setupsh) - FTP server setup for scoring
@@ -83,6 +85,50 @@ Disables unnecessary services and scans for threats. Output is color-coded: **re
 - Recent authentication failures
 
 **Configuration:** Edit the `SCORED_SERVICES` array at the top of the script to match your competition's scored services.
+
+---
+
+## [@dn_install.sh](./@dn_install.sh)
+
+defined.net dnclient one-step install — downloads, installs, starts, and enrolls the dnclient server binary.
+
+**What it does:**
+1. Detects OS and architecture
+2. Fetches the latest download URL from the defined.net API
+3. Downloads the dnclient binary
+4. Installs to `/usr/local/bin` (configurable via `DN_INSTALL_DIR`)
+5. Installs and starts the dnclient service (auto-starts on boot)
+6. Enrolls the host with the provided enrollment code
+
+**Usage:**
+```bash
+sudo ./dn_install.sh ABCD-1234-EFGH-5678
+
+# Custom install directory:
+DN_INSTALL_DIR=/opt/dn sudo ./dn_install.sh ABCD-1234-EFGH-5678
+```
+
+---
+
+## [@dn_enroll.sh](./@dn_enroll.sh)
+
+defined.net CTF mass host enrollment — creates hosts via the defined.net API and prints one-liner enrollment commands.
+
+**What it does:**
+- For each host name argument, creates a host on the defined.net network via API
+- Prints the assigned IP and enrollment command for each host
+- Requires `curl` and `jq`
+
+**Configuration:** Set `DN_API_KEY` and `DN_NETWORK_ID` environment variables (required). Optionally set `DN_ROLE_ID` to assign a role.
+
+**Usage:**
+```bash
+# Enroll multiple hosts:
+DN_API_KEY=xxx DN_NETWORK_ID=network-XXXXXXX ./dn_enroll.sh kali-1 kali-2 ubuntu-target
+
+# With a role:
+DN_API_KEY=xxx DN_NETWORK_ID=network-XXXXXXX DN_ROLE_ID=role-XXXXXXX ./dn_enroll.sh db-server
+```
 
 ---
 
