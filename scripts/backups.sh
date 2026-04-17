@@ -16,6 +16,9 @@ local_backup () {
 		/lib/systemd)
 			DIR_SHORT="lib"
 			;;
+		/usr/lib/systemd)
+			DIR_SHORT="usr_lib_systemd"
+			;;
 		/usr/bin)
 			DIR_SHORT="bin"
 			;;
@@ -26,7 +29,7 @@ local_backup () {
 			# DIR_SHORT="<short, identifiable name>"
 			#;;
 		*)
-			echo "Bad Directory" >2
+			echo "Bad Directory" >&2
 			exit 1
 			;;
 	esac
@@ -34,7 +37,7 @@ local_backup () {
 	# rsync -abv --delete backs up files, forcing consistency, while keeping backups of deleted files (appended with ~)
 	# --log-file logs what is done
 	# > /dev/null removes command line output
-	rsync -abv --delete --log-file=${LOG} $1 ${LOCAL_DIR} > /dev/null
+	rsync -abv --delete --log-file="${LOG}" "$1" "${LOCAL_DIR}" > /dev/null
 	printf "\n\nSEARCHABLE TEXT\n\n\n" >> ${LOG}
 }
 
@@ -44,7 +47,7 @@ remote_backup () {
 	# --log-file logs what is done
 	# -e uses SSH
 	# > /dev/null removes command line output
-	rsync -abv --delete --log-file={LOG} -e "ssh -i ${SSH_KEY}" ${LOCAL_DIR} ${REMOTE_DIR} > /dev/null
+	rsync -abv --delete --log-file="${LOG}" -e "ssh -i ${SSH_KEY}" "${LOCAL_DIR}" "${REMOTE_DIR}" > /dev/null
 	printf "\n\nSEARCHABLE TEXT\n\n\n" >> ${LOG}
 	scp -i ${SSH_KEY} ${LOG} ${REMOTE_DIR}/curr_backup.txt
 }
@@ -56,7 +59,7 @@ init_remote_backup () {
 #	mv ~/backup_key ${SSH_KEY}
 	
 	LOG="${LOCAL_DIR}/init_backup.txt"
-	rsync -abv --delete --log-file={LOG} -e "ssh -i ${SSH_KEY}"
+	rsync -abv --delete --log-file="${LOG}" -e "ssh -i ${SSH_KEY}"
 	scp -i ${SSH_KEY} ${LOG} ${BACKUP_SERVER}/init/${HOSTNAME}_init_backup.txt
 }
 
@@ -89,6 +92,7 @@ local_backup /etc
 local_backup /home
 local_backup /var/log
 local_backup /lib/systemd
+local_backup /usr/lib/systemd
 local_backup /usr/bin
 local_backup /usr/sbin
 

@@ -73,7 +73,7 @@ ignoreip = 127.0.0.1/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
 enabled = true
 port = 22
 filter = sshd
-logpath = /var/log/auth.log
+logpath = AUTHLOG_PLACEHOLDER
 maxretry = 3
 bantime = 3600
 findtime = 600
@@ -82,23 +82,39 @@ findtime = 600
 enabled = false
 port = http,https
 filter = apache-auth
-logpath = /var/log/apache2/error.log
+logpath = APACHE_ERROR_LOG_PLACEHOLDER
 maxretry = 6
 
 [apache-badbots]
 enabled = false
 port = http,https
 filter = apache-badbots
-logpath = /var/log/apache2/access.log
+logpath = APACHE_ACCESS_LOG_PLACEHOLDER
 maxretry = 2
 
 [nginx-http-auth]
 enabled = false
 port = http,https
 filter = nginx-http-auth
-logpath = /var/log/nginx/error.log
+logpath = NGINX_ERROR_LOG_PLACEHOLDER
 maxretry = 6
 F2B_EOF
+
+# Resolve log paths (differ between Debian and RHEL)
+AUTH_LOG=$(test -f /var/log/auth.log && echo /var/log/auth.log || echo /var/log/secure)
+APACHE_ERROR_LOG=$(test -f /var/log/apache2/error.log && echo /var/log/apache2/error.log || echo /var/log/httpd/error_log)
+APACHE_ACCESS_LOG=$(test -f /var/log/apache2/access.log && echo /var/log/apache2/access.log || echo /var/log/httpd/access_log)
+NGINX_ERROR_LOG=$(test -f /var/log/nginx/error.log && echo /var/log/nginx/error.log || echo /var/log/nginx/error.log)
+
+sed -i "s|AUTHLOG_PLACEHOLDER|${AUTH_LOG}|" /etc/fail2ban/jail.local
+sed -i "s|APACHE_ERROR_LOG_PLACEHOLDER|${APACHE_ERROR_LOG}|" /etc/fail2ban/jail.local
+sed -i "s|APACHE_ACCESS_LOG_PLACEHOLDER|${APACHE_ACCESS_LOG}|" /etc/fail2ban/jail.local
+sed -i "s|NGINX_ERROR_LOG_PLACEHOLDER|${NGINX_ERROR_LOG}|" /etc/fail2ban/jail.local
+
+# Add systemd backend on systems without syslog files
+if [[ ! -f /var/log/auth.log && ! -f /var/log/secure ]]; then
+    sed -i 's/^\[sshd\]/[sshd]\nbackend = systemd/' /etc/fail2ban/jail.local
+fi
 
 echo -e "${GRN}[+] Starting fail2ban service${RST}"
 systemctl enable fail2ban

@@ -21,6 +21,16 @@ RST='\033[0m'
 CRITICAL=0
 WARN=0
 
+# Use temp files for counters (subshell-safe)
+CRITICAL_FILE=$(mktemp)
+WARN_FILE=$(mktemp)
+echo 0 > "$CRITICAL_FILE"
+echo 0 > "$WARN_FILE"
+incr_critical() { echo $(( $(cat "$CRITICAL_FILE") + 1 )) > "$CRITICAL_FILE"; }
+incr_warn() { echo $(( $(cat "$WARN_FILE") + 1 )) > "$WARN_FILE"; }
+get_critical() { cat "$CRITICAL_FILE"; }
+get_warn() { cat "$WARN_FILE"; }
+
 # ============================================================================
 # CONFIGURATION — edit these for your competition
 # ============================================================================
@@ -50,6 +60,7 @@ DISABLE_SERVICES=(
     "nfs-client" "rpcbind" "rpc-gssd" "rpc-svcgssd"
     "postfix" "sendmail" "telnet" "rsh" "rlogin"
     "finger" "talk" "ntalk" "tftp" "xinetd"
+    "cron" "crond"
 )
 
 for service in "${DISABLE_SERVICES[@]}"; do
@@ -74,10 +85,10 @@ systemctl list-units --type=service --state=running --no-pager | \
         service_file=$(systemctl show -p FragmentPath "$service" 2>/dev/null | cut -d= -f2)
         if [[ "$service_file" =~ (^/tmp/|^/home/|^/var/tmp/|^/dev/shm/) ]]; then
             echo -e "  ${RED}${service} (${service_file})${RST}"
-            ((CRITICAL++))
+            incr_critical
         elif [[ "$service" =~ (shell|reverse|backdoor|hack|exploit) ]]; then
             echo -e "  ${RED}${service} (${service_file})${RST}"
-            ((CRITICAL++))
+            incr_critical
         else
             echo -e "${GRAY}  ${service}${RST}"
         fi
@@ -87,7 +98,7 @@ echo -e "${GRN}[+] Checking UID 0 accounts${RST}"
 awk -F: '$3 == 0 {print $1}' /etc/passwd | while read -r user; do
     if [[ "$user" != "root" ]]; then
         echo -e "  ${RED}${user}${RST}"
-        ((CRITICAL++))
+        incr_critical
     else
         echo -e "${GRAY}  ${user}${RST}"
     fi
@@ -104,7 +115,7 @@ done < <(find /tmp /var/tmp /dev/shm -perm -4000 -type f 2>/dev/null)
 while IFS= read -r f; do
     [[ -z "$f" ]] && continue
     echo -e "  ${YEL}${f}${RST} (review — may be legitimate)"
-    ((WARN++))
+    incr_warn
 done < <(find /opt -perm -4000 -type f 2>/dev/null)
 [[ "$SUID_FOUND" -eq 0 ]] && echo -e "${GRAY}  (clean)${RST}"
 
@@ -113,7 +124,7 @@ ss -tulpn 2>/dev/null | grep LISTEN | awk '{printf "  %s %s\n", $5, $7}' | sort 
     port=$(echo "$line" | awk '{print $1}' | sed 's/.*://')
     if ! [[ "$port" =~ ^(22|53|80|443|3306|5432|25|110|143|993|995|21)$ ]]; then
         echo -e "  ${RED}${line}${RST}"
-        ((WARN++))
+        incr_warn
     else
         echo -e "${GRAY}  ${line}${RST}"
     fi
@@ -125,7 +136,7 @@ if [[ -d /etc/xinetd.d ]]; then
         [[ -f "$conf" && ! "$conf" =~ (README|CVS) ]] || continue
         if grep -q "disable.*no" "$conf"; then
             echo -e "  ${RED}$(basename "$conf")${RST}"
-            ((WARN++))
+            incr_warn
         fi
     done
 fi
@@ -141,7 +152,7 @@ for crontab in /etc/crontab /etc/cron.d/*; do
         while IFS= read -r line; do
             echo -e "  ${RED}${line}${RST}"
         done <<< "$SUSPICIOUS"
-        ((CRITICAL++))
+        incr_critical
     else
         echo -e "${GRAY}  ${crontab} (clean)${RST}"
     fi
@@ -154,7 +165,7 @@ for usercrontab in /var/spool/cron/crontabs/* /var/spool/cron/*; do
     while IFS= read -r line; do
         echo -e "  ${RED}${line}${RST}"
     done < "$usercrontab"
-    ((CRITICAL++))
+    incr_critical
 done
 
 if crontab -l 2>/dev/null | grep -q .; then
@@ -162,7 +173,7 @@ if crontab -l 2>/dev/null | grep -q .; then
     crontab -l 2>/dev/null | while IFS= read -r line; do
         echo -e "  ${RED}${line}${RST}"
     done
-    ((CRITICAL++))
+    incr_critical
 else
     echo -e "${GRAY}  root crontab (clean)${RST}"
 fi
@@ -173,10 +184,10 @@ systemctl list-timers --no-pager --no-legend 2>/dev/null | awk '{for(i=1;i<=NF;i
     timer_cmd=$(systemctl show -p ExecStart "$timer_name" 2>/dev/null | cut -d= -f2-)
     if [[ "$timer_unit" =~ (^/tmp/|^/home/|^/var/tmp/|^/dev/shm/) ]] || [[ "$timer_cmd" =~ (^/tmp/|^/home/|^/var/tmp/|^/dev/shm/) ]]; then
         echo -e "  ${RED}${timer_name} → ${timer_cmd}${RST}"
-        ((CRITICAL++))
+        incr_critical
     elif [[ "$timer_cmd" =~ (nc |ncat|netcat|socat|/dev/tcp|curl.*\|.*sh|wget.*\|.*sh|python.*socket|perl.*socket|ruby.*socket) ]]; then
         echo -e "  ${RED}${timer_name} → ${timer_cmd}${RST}"
-        ((CRITICAL++))
+        incr_critical
     else
         echo -e "${GRAY}  ${timer_name}${RST}"
     fi
@@ -193,7 +204,7 @@ for filepath in /root/.bashrc /root/.bash_profile /root/.profile /etc/bash.bashr
         while IFS= read -r line; do
             echo -e "  ${RED}${line}${RST}"
         done <<< "$FOUND"
-        ((CRITICAL++))
+        incr_critical
     else
         echo -e "${GRAY}  ${filepath} (clean)${RST}"
     fi
@@ -210,7 +221,7 @@ for homedir in /home/*; do
             while IFS= read -r line; do
                 echo -e "  ${YEL}${line}${RST}"
             done <<< "$FOUND"
-            ((WARN++))
+            incr_warn
         else
             echo -e "${GRAY}  ${filepath} (clean)${RST}"
         fi
@@ -225,7 +236,7 @@ for sysfile in /etc/profile.d/*.sh; do
         while IFS= read -r line; do
             echo -e "  ${YEL}${line}${RST}"
         done <<< "$FOUND"
-        ((WARN++))
+        incr_warn
     else
         echo -e "${GRAY}  ${sysfile} (clean)${RST}"
     fi
@@ -246,7 +257,7 @@ for service in "${SCORED_SERVICES[@]}"; do
             echo -e "${GRAY}  ${service} (running)${RST}"
         else
             echo -e "  ${YEL}${service}${RST} (enabled but not running)"
-            ((WARN++))
+            incr_warn
         fi
     fi
 done
@@ -255,29 +266,29 @@ done
 echo -e "${GRN}[+] Checking SUID/SGID binaries system-wide${RST}"
 echo -e "${GRAY}  (scanning — this may take a moment)${RST}"
 SUID_UNUSUAL=0
-find / -perm -4000 -type f 2>/dev/null | grep -vE '^/(usr|bin|sbin|lib)' | while read -r f; do
+find / -perm -4000 -type f 2>/dev/null | grep -vE '^/(usr|bin|sbin|lib|lib64)' | while read -r f; do
     echo -e "  ${YEL}${f}${RST}"
-    ((WARN++))
+    incr_warn
     SUID_UNUSUAL=1
 done
 SGID_UNUSUAL=0
-find / -perm -2000 -type f 2>/dev/null | grep -vE '^/(usr|bin|sbin|lib)' | while read -r f; do
+find / -perm -2000 -type f 2>/dev/null | grep -vE '^/(usr|bin|sbin|lib|lib64)' | while read -r f; do
     echo -e "  ${YEL}${f}${RST}"
-    ((WARN++))
+    incr_warn
     SGID_UNUSUAL=1
 done
-[[ "$SUID_UNUSUAL" -eq 0 && "$SGID_UNUSUAL" -eq 0 ]] && echo -e "${GRAY}  (clean — all in /usr, /bin, /sbin, /lib)${RST}"
+[[ "$SUID_UNUSUAL" -eq 0 && "$SGID_UNUSUAL" -eq 0 ]] && echo -e "${GRAY}  (clean — all in standard paths)${RST}"
 
 # PwnKit check
 if [[ -u /usr/bin/pkexec ]]; then
     echo -e "  ${RED}/usr/bin/pkexec is SUID — check for CVE-2021-4034 (PwnKit)${RST}"
-    ((CRITICAL++))
+    incr_critical
 fi
 
 echo -e "${GRN}[+] Checking world-writable directories${RST}"
 find / -type d -perm -002 2>/dev/null | grep -v -E '^/(tmp|var/tmp|dev/shm|proc|sys)' | while read -r d; do
     echo -e "  ${YEL}${d}${RST}"
-    ((WARN++))
+    incr_warn
 done
 echo -e "${GRAY}  (done)${RST}"
 
@@ -290,7 +301,7 @@ echo -e "${GRAY}  (done)${RST}"
 echo -e "${GRN}[+] Checking suspicious processes${RST}"
 ps aux | grep -E 'nc[[:space:]].*-[ec]|ncat[[:space:]]|bash.*\/dev\/tcp|sh.*\/dev\/tcp|python.*socket|perl.*socket|ruby.*socket|socat' | grep -v grep | while read -r line; do
     echo -e "  ${RED}${line}${RST}"
-    ((CRITICAL++))
+    incr_critical
 done
 echo -e "${GRAY}  (done)${RST}"
 
@@ -301,13 +312,13 @@ done
 echo -e "${GRAY}  (done)${RST}"
 
 echo -e "${GRN}[+] Checking recent auth failures${RST}"
-FAILS=$(grep "Failed password" /var/log/auth.log 2>/dev/null | tail -5 || true)
+FAILS=$(grep "Failed password" /var/log/auth.log 2>/dev/null | tail -5; grep "Failed password" /var/log/secure 2>/dev/null | tail -5 || true)
 if [[ -n "$FAILS" ]]; then
     echo -e "  ${YEL}Recent failed logins:${RST}"
     while IFS= read -r line; do
         echo -e "  ${YEL}${line}${RST}"
     done <<< "$FAILS"
-    ((WARN++))
+    incr_warn
 else
     echo -e "${GRAY}  (none found)${RST}"
 fi
@@ -315,6 +326,10 @@ fi
 # ============================================================================
 # SUMMARY
 # ============================================================================
+
+CRITICAL=$(get_critical)
+WARN=$(get_warn)
+rm -f "$CRITICAL_FILE" "$WARN_FILE"
 
 echo ""
 if [[ "$CRITICAL" -gt 0 ]]; then

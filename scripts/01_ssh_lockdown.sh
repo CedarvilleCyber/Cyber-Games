@@ -214,7 +214,6 @@ PubkeyAuthentication yes
 AuthorizedKeysFile .ssh/authorized_keys
 PasswordAuthentication no
 PermitEmptyPasswords no
-ChallengeResponseAuthentication no
 KbdInteractiveAuthentication no
 UsePAM yes
 
@@ -243,8 +242,12 @@ Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.
 MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256
 KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
 
-Subsystem sftp /usr/lib/openssh/sftp-server
+Subsystem sftp SFTP_SERVER_PLACEHOLDER
 SSHD_EOF
+
+# Resolve SFTP server path (differs between Debian and RHEL)
+SFTP_SERVER=$(ls /usr/lib/openssh/sftp-server /usr/libexec/openssh/sftp-server 2>/dev/null | head -1)
+sed -i "s|SFTP_SERVER_PLACEHOLDER|${SFTP_SERVER:-/usr/lib/openssh/sftp-server}|" "$SSHD_CONFIG"
 
 ALLOW_LINE="AllowUsers"
 for u in "${ALL_PROTECTED[@]}"; do

@@ -1,60 +1,75 @@
 #!/bin/bash
 #
+# @init_overview.sh - Initial machine cleanup
+# Clears common persistence mechanisms, removes immutability, nukes cron
+# Usage: sudo bash init_overview.sh
 #
-# INITIAL SYSTEM CHECK for...
-# 	- tampered kernel
-#       - changed shell
-#       - OS type
-#       - file immutability
-#       - existing cronjobs
+
+set -euo pipefail
 
 echo ""
 echo "#############################"
 echo "------ INITIAL SCRIPT -------"
 echo "#############################"
 echo ""
-echo ""
-# CLEAR /tmp DIRECTORY
-sudo rm -rf /tmp
-sudo rm -rf /etc/ld.so.preload
-echo "--/tmp + /etc/ld.so.preload DIRECTORY CLEARED--"
-echo ""
-# PRINT OS type
-echo "--YOUR OS--" && uname -a
-echo ""
-# PRINT active users
-echo "--ACTIVE USERS--" && w
-echo ""
-# PRINT active connections
-echo "--ACTIVE CONNECTIONS (OUTBOUND + INBOUND)--" && ss -tulnp
-echo ""
-# CHECK for tainted kernel
-echo "--TAINTED KERNEL?--" && sysctl kernel.tainted
-echo ""
-# PRINT kernel messages for taint into taint.txt
-echo "**CHECK 'TAINT' KERNEL MESSAGES AND REMOVE MODULES IF NECESSARY!!**"
-echo ""
-# REMOVE all immutable files
-echo "REMOVING IMMUTABLE FILES FROM /etc AND /usr (MAY TAKE A SECOND)..."
-sudo chattr -R -ia /etc /usr 2>/dev/null
-echo "->DONE"
-echo ""
-# CHANGE default shell for current user to /bin/bash (for saftey)
-echo "CHANGING DEFAULT SHELL TO /bin/bash..."
-echo -n "**ERROR MESSAGES: " && sudo usermod -s /bin/bash $(whoami)
-echo "->DONE"
-echo ""
-# CRUSH cronjobs for whole system + STOP/DISABLE/MASK cron
-echo "SQUASHING ALL CRONTABS & BLOCKING CRON..."
-sudo rm -f /etc/crontab
-sudo rm -f /etc/cron.d/*
-sudo rm -f /etc/cron.daily/*
-sudo rm -f /etc/cron.hourly/*
-sudo rm -f /etc/cron.weekly/*
-sudo rm -f /etc/cron.monthly/*
-sudo systemctl stop cron
-sudo systemctl disable cron
-sudo systemctl mask cron
-echo "->DONE"
+
+# CLEAR /tmp contents (not the directory itself)
+echo "[+] Clearing /tmp and /etc/ld.so.preload"
+find /tmp -mindepth 1 -delete 2>/dev/null || true
+rm -f /etc/ld.so.preload
+echo "    done"
 echo ""
 
+# PRINT OS type
+echo "[+] System info"
+uname -a
+echo ""
+
+# PRINT active users
+echo "[+] Active users"
+w
+echo ""
+
+# PRINT active connections
+echo "[+] Active connections"
+ss -tulnp
+echo ""
+
+# CHECK for tainted kernel
+echo "[+] Tainted kernel check"
+sysctl kernel.tainted 2>/dev/null || echo "    (not available)"
+echo "    **CHECK 'TAINT' KERNEL MESSAGES AND REMOVE MODULES IF NECESSARY!!**"
+echo ""
+
+# REMOVE all immutable files
+echo "[+] Removing immutable flags from /etc and /usr"
+chattr -R -ia /etc /usr 2>/dev/null || true
+echo "    done"
+echo ""
+
+# CHANGE default shell for current user to /bin/bash
+echo "[+] Changing default shell to /bin/bash"
+NOLOGIN=$(command -v nologin 2>/dev/null || echo "/usr/sbin/nologin")
+usermod -s /bin/bash "$(whoami)" 2>/dev/null || true
+echo "    done"
+echo ""
+
+# CRUSH cronjobs + STOP/DISABLE/MASK cron (try both names)
+echo "[+] Squashing all crontabs and blocking cron"
+rm -f /etc/crontab
+rm -f /etc/cron.d/*
+rm -f /etc/cron.daily/*
+rm -f /etc/cron.hourly/*
+rm -f /etc/cron.weekly/*
+rm -f /etc/cron.monthly/*
+for svc in cron crond; do
+    systemctl stop "$svc" 2>/dev/null || true
+    systemctl disable "$svc" 2>/dev/null || true
+    systemctl mask "$svc" 2>/dev/null || true
+done
+echo "    done"
+echo ""
+
+echo "============================="
+echo "  INITIAL CLEANUP COMPLETE"
+echo "============================="
