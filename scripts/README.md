@@ -11,6 +11,8 @@ Scripts for hardening and auditing Linux machines during NCAE cyber competitions
 
 ### Optional Scripts (@ prefix = run anytime)
 - [@gravwell_setup.sh](#gravwell_setupsh) - Centralized logging to Gravwell
+- [@init_overview.sh](#init_overviewsh) - Initial machine cleaning (crontabs, immutability, /tmp)
+- [@ftp_setup.sh](#ftp_setupsh) - FTP server setup for scoring
 
 ### Utility Scripts
 - [backups.sh](#backupssh) - Local and remote backups of important directories
@@ -132,6 +134,38 @@ tag=auth grep "Failed password" | regex "from (?P<ip>\S+)" | count by ip | table
 **Network Requirements:**
 - Gravwell indexer must be reachable on port 4023 (cleartext) or 4024 (TLS)
 - No firewall blocking between host and Gravwell server
+
+---
+
+## [@init_overview.sh](./@init_overview.sh)
+
+Initial machine cleanup — run first thing on a fresh image.
+
+**What it does:**
+- Clears `/tmp` and removes `/etc/ld.so.preload` (common LD_PRELOAD hijack)
+- Prints OS info, active users, and connections
+- Checks for tainted kernel
+- Removes immutable flags from `/etc` and `/usr` (undoes `chattr +i` persistence)
+- Changes default shell to `/bin/bash` for current user
+- Removes all crontabs and masks the cron daemon
+
+**Warning:** This is aggressive — it deletes all cron jobs and masks cron entirely. Make sure no scored services depend on cron.
+
+---
+
+## [@ftp_setup.sh](./@ftp_setup.sh)
+
+FTP server setup for scoring — configures vsftpd with a scoring group and user whitelist.
+
+**What it does:**
+- Creates `scoring` group
+- Creates scoring directory with correct permissions (setgid 2770)
+- Adds scoring users to group and vsftpd userlist
+- Sets scoring users' shell to `/usr/sbin/nologin` and home to the scoring directory
+- Writes hardened `vsftpd.conf` (no anonymous, chroot, passive mode, userlist deny)
+- Restarts vsftpd
+
+**Configuration:** Edit `SCORING_USERS` and `SCORING_DIRECTORY` at the top of the script before running.
 
 ---
 
