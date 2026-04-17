@@ -2,6 +2,14 @@
 
 Scripts for hardening and auditing Linux machines during NCAE cyber competitions.
 
+## Quick Start
+
+```bash
+git clone https://github.com/CedarvilleCyber/Cyber-Games.git && cd Cyber-Games && bash tools/setup.sh
+```
+
+This clones the repo and downloads the open-source tools (pspy64, linpeas, lynis, restic). Then run scripts from `scripts/`.
+
 ## Table of Contents
 
 ### Core Competition Scripts (run in order)
@@ -12,11 +20,14 @@ Scripts for hardening and auditing Linux machines during NCAE cyber competitions
 ### Optional Scripts (@ prefix = run anytime)
 - [@dn_install.sh](#dn_installsh) - defined.net dnclient one-step install & enroll
 - [@dn_enroll.sh](#dn_enrollsh) - defined.net CTF mass host enrollment
+- [@doctor.sh](#doctorsh) - Service diagnostic expert system
+- [@fruit.sh](#fruitsh) - Service config misconfiguration audit
 - [@gravwell_setup.sh](#gravwell_setupsh) - Centralized logging to Gravwell
 - [@init_overview.sh](#init_overviewsh) - Initial machine cleaning (crontabs, immutability, /tmp)
 - [@ftp_setup.sh](#ftp_setupsh) - FTP server setup for scoring
 - [@smb_setup.sh](#smb_setupsh) - SMB server setup for scoring
-- [@monitor.sh](#monitor.sh) - Simple script to periodically check active connections and users
+- [@monitor.sh](#monitorsh) - Simple script to periodically check active connections and users
+- [@watchdog.sh](#watchdogsh) - tmux monitoring dashboard
 
 ### Utility Scripts
 - [backups.sh](#backupssh) - Local and remote backups of important directories
@@ -148,6 +159,77 @@ DN_API_KEY=xxx DN_NETWORK_ID=network-XXXXXXX ./dn_enroll.sh kali-1 kali-2 ubuntu
 # With a role:
 DN_API_KEY=xxx DN_NETWORK_ID=network-XXXXXXX DN_ROLE_ID=role-XXXXXXX ./dn_enroll.sh db-server
 ```
+
+---
+
+## [@doctor.sh](./@doctor.sh)
+
+Service diagnostic expert system — checks why services are down, validates configs, scans logs for failure patterns.
+
+**Services supported:** Apache, Nginx, OpenSSH, PostgreSQL, MySQL/MariaDB, vsftpd, Samba, BIND DNS
+
+**What it does for each service:**
+- Checks if service is running (with restart count/crashloop detection)
+- Validates config syntax (apachectl, nginx -t, sshd -t, testparm, named-checkconf)
+- Checks if service is listening on the correct port and interface (localhost-only flagged)
+- Scans journal logs for common failure patterns (port conflicts, permission denied, syntax errors, segfaults, OOM, TLS errors)
+
+**Usage:**
+```bash
+sudo ./doctor.sh
+```
+
+---
+
+## [@fruit.sh](./@fruit.sh)
+
+Service config misconfiguration audit — scans config files for vulnerable settings with severity ratings and fix suggestions.
+
+**Services checked:**
+- **apache2** — directory listing, FollowSymLinks, AllowOverride, TRACE, weak TLS, server-status exposure, ExecCGI, SSI
+- **nginx** — autoindex, weak TLS protocols, weak cipher groups
+- **openssh** — root login, empty passwords, SSHv1, password auth, MaxAuthTries, weak ciphers, AllowUsers, AuthorizedKeysFile/Command, StrictModes, forwarding, X11, UsePAM
+- **vsftpd** — anonymous access, anonymous upload, chroot, SSL/TLS
+- **samba** — null passwords, guest access, map to guest, SMB signing, SMBv1/EternalBlue, encryption, anonymous enumeration
+- **bind** — open recursion, zone transfers, allow-query, dynamic updates, version string
+- **postgres** — listen_addresses, SSL, password_encryption, pg_hba trust/md5 entries, broad remote rules
+- **mysql** — skip-grant-tables, local-infile, bind-address, secure-file-priv
+- **php** — allow_url_include (RFI), allow_url_fopen (SSRF), disable_functions
+- **cron** — writable cron files, netcat reverse shells, /tmp execution, base64 decoding, IP downloads, interpreter one-liners
+- **sudoers** — NOPASSWD, !authenticate, writable sudoers.d files
+
+**Usage:**
+```bash
+# Check all services:
+sudo ./fruit.sh
+
+# Check specific services:
+sudo ./fruit.sh openssh vsftpd samba
+```
+
+---
+
+## [@watchdog.sh](./@watchdog.sh)
+
+tmux monitoring dashboard — opens a multi-pane session with live monitoring tools. Filters loopback noise to keep output clean.
+
+**Panes (all filter out localhost noise):**
+- **Top-left:** Process monitor (pspy64 from `tools/` if available, else find-based watcher on `/etc /home /root /var/spool`)
+- **Top-right:** Network connections (listening + established, non-loopback only)
+- **Bottom-left:** Auth log (filtered: Failed, Accepted, sudo, useradd/del, passwd, su)
+- **Bottom-right:** Logged-in users + non-loopback listening ports
+
+**Additional windows:**
+- **audit:** Re-runs `03_audit.sh` every 15 minutes
+- **shell:** Interactive shell
+
+**Usage:**
+```bash
+sudo ./watchdog.sh
+# Reconnect: sudo ./watchdog.sh  (auto-attaches to existing session)
+```
+
+**Prerequisites:** `bash tools/setup.sh` (downloads pspy64 and other tools)
 
 ---
 

@@ -1,1 +1,6 @@
 .envrc
+tools/pspy64
+tools/linpeas.sh
+tools/lynis/
+tools/restic
+tools/restic.bz2
