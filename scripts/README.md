@@ -8,29 +8,29 @@ Scripts for hardening and auditing Linux machines during NCAE cyber competitions
 git clone https://github.com/CedarvilleCyber/Cyber-Games.git && cd Cyber-Games && bash tools/setup.sh
 ```
 
-This clones the repo and downloads the open-source tools (pspy64, linpeas, lynis, restic). Then run scripts from `scripts/`.
+Clones the repo and downloads open-source tools (pspy64, linpeas, lynis, restic). Then run scripts from `scripts/`.
 
 ## Table of Contents
 
 ### Core Competition Scripts (run in order)
-- [01_ssh_lockdown.sh](#01_ssh_lockdownsh) - SSH hardening, backdoor removal, key deployment, user cleanup, temp purge
+- [01_ssh_lockdown.sh](#01_ssh_lockdownsh) - SSH hardening, backdoor removal, key deployment, user cleanup
 - [02_fail2ban_deploy.sh](#02_fail2ban_deploysh) - Brute force protection
 - [03_audit.sh](#03_auditsh) - Service lockdown, full security audit
 
 ### Optional Scripts (@ prefix = run anytime)
 - [@dn_install.sh](#dn_installsh) - defined.net dnclient one-step install & enroll
 - [@dn_enroll.sh](#dn_enrollsh) - defined.net CTF mass host enrollment
-- [@doctor.sh](#doctorsh) - Service diagnostic expert system
+- [@doctor.sh](#doctorsh) - Service diagnostics (why is it down?)
 - [@fruit.sh](#fruitsh) - Service config misconfiguration audit
 - [@gravwell_setup.sh](#gravwell_setupsh) - Centralized logging to Gravwell
-- [@init_overview.sh](#init_overviewsh) - Initial machine cleaning (crontabs, immutability, /tmp)
+- [@init_overview.sh](#init_overviewsh) - Initial machine cleanup (crontabs, immutability, /tmp)
 - [@ftp_setup.sh](#ftp_setupsh) - FTP server setup for scoring
 - [@smb_setup.sh](#smb_setupsh) - SMB server setup for scoring
-- [@monitor.sh](#monitorsh) - Simple script to periodically check active connections and users
+- [@monitor.sh](#monitorsh) - Periodic connection and user check
 - [@watchdog.sh](#watchdogsh) - tmux monitoring dashboard
 
 ### Utility Scripts
-- [backups.sh](#backupssh) - Local and remote backups of important directories
+- [backups.sh](#backupssh) - Local and remote backups
 
 ---
 
@@ -38,143 +38,68 @@ This clones the repo and downloads the open-source tools (pspy64, linpeas, lynis
 
 Full SSH hardening — run first and fast on competition images.
 
-**What it does:**
 1. Creates `blueteam` user, sets passwords (prompted or auto-generated)
-2. Backs up and replaces `sshd_config` with hardened version (no password auth, ciphers restricted, AllowUsers enforced)
-3. Locks down file permissions (`/etc/passwd`, `/etc/shadow`, `/etc/ssh/sshd_config`, `/etc/sudoers`)
-4. Cleans sudoers — only root + sudo group, disables `/etc/sudoers.d/`
-5. Removes non-protected users from sudo group
-6. Deploys scoring key to all scoring users and team keys to blueteam
-7. Kills non-protected SSH sessions, reverse shells, and processes with deleted executables
-8. **Deletes non-protected user accounts** and their home directories
-9. Purges `/tmp`, `/var/tmp`, `/dev/shm` (removes dropped payloads)
-10. Disables `sshd_config.d` override files
-11. Restarts sshd
-12. Validates sshd config
+2. Replaces `sshd_config` with hardened version (no password auth, AllowUsers enforced)
+3. Locks down file permissions, cleans sudoers
+4. Deploys scoring key + team keys
+5. Kills non-protected sessions, reverse shells, deleted-exe processes
+6. Deletes non-protected user accounts and home dirs
+7. Purges `/tmp`, `/var/tmp`, `/dev/shm`
+8. Disables `sshd_config.d`, restarts sshd
 
-**Configuration:** Edit the `TEAM_KEYS`, `SCORING_USERS`, `PROTECTED_USERS`, and `ALLOWED_USERS` arrays at the top of the script before running.
+**Config:** Edit `TEAM_KEYS`, `SCORING_USERS`, `PROTECTED_USERS`, `ALLOWED_USERS` arrays before running.
 
 ---
 
 ## [02_fail2ban_deploy.sh](./02_fail2ban_deploy.sh)
 
-Installs and configures fail2ban for SSH brute-force protection.
-
-**What it does:**
-- Installs fail2ban via apt/dnf/yum
-- Writes `/etc/fail2ban/jail.local` with SSH jail (3 attempts, 1h ban)
-- Enables and starts fail2ban service
-
-**Note:** Assumes `/var/log/auth.log` (Debian path). On RHEL systems the log path is `/var/log/secure` — edit the config if needed.
+Installs fail2ban with SSH jail (3 attempts, 1h ban). RHEL users: change log path to `/var/log/secure`.
 
 ---
 
 ## [03_audit.sh](./03_audit.sh)
 
-Disables unnecessary services and scans for threats. Output is color-coded: **red** = critical/suspicious, **yellow** = warning/review, **gray** = clean/noise.
+Disables unnecessary services and scans for threats. **red** = critical, **yellow** = warning, **gray** = clean.
 
-**Lockdown actions (silent):**
-- Disables unnecessary services (cups, bluetooth, avahi, nfs, etc.)
-- Secures shared memory (`/run/shm` noexec,nosuid in fstab)
-- Removes SUID binaries from `/tmp`, `/var/tmp`, `/dev/shm`
+**Silent lockdown:** disables cups/bluetooth/avahi/nfs/etc., secures `/run/shm`, removes SUID from temp dirs.
 
-**Audit checks (printed):**
-- Suspicious services (unusual paths or names)
-- Non-root UID 0 accounts
-- User default shells (flags nonstandard shells)
-- nologin/false binary integrity (shell strings inside binary, missing denial strings, `/etc/shells` listing)
-- System accounts with passwords
-- `/etc/hosts` hijacking (non-loopback entries)
-- Binary integrity (`debsums`/`dpkg -V`/`rpm -Va` checksums)
-- `ld.so.preload` and `ld.so.conf.d` suspicious paths, `LD_PRELOAD` env var
-- ELF binaries in staging directories (`/tmp`, `/dev/shm`, `/var/tmp`)
-- Kernel modules from unusual paths
-- Listening ports (with process binary)
-- Hidden ports (`/proc/net/tcp` vs `ss` mismatch — rootkit detection)
-- Firewall NAT hijacking (nftables/iptables DNAT/REDIRECT)
-- xinetd services
-- Crontabs (suspicious patterns in system cron, **any** user/root crontab entries highlighted since nothing should exist during comp)
-- `at` jobs
-- Systemd timers (suspicious paths or commands)
-- Shell profiles for backdoor aliases (nc, socat, /dev/tcp, curl|sh, etc.)
-- SUID/SGID binaries (temp dirs removed, known-good whitelist, `/opt` flagged for review, `/home` flagged)
-- PwnKit check (pkexec SUID)
-- Elevated capabilities (`getcap`)
-- sudoers NOPASSWD ALL
-- PAM `pam_exec` (command execution on auth)
-- sshd_config dangerous directives (PermitRootLogin yes, PermitEmptyPasswords yes, GatewayPorts yes, non-standard AuthorizedKeysFile)
-- SSH authorized keys per user
-- Immutable files (`lsattr` on critical configs)
-- Scored services (running vs down)
-- World-writable directories (outside /tmp, /var/tmp, /dev/shm)
-- Recently modified system binaries (7 days)
-- Suspicious processes (reverse shells, netcat, etc.)
-- Processes with deleted executables
-- Active network connections
-- Recent authentication failures
-- Numbered findings summary
+**Audit checks:** suspicious services, UID 0 accounts, user shells, nologin binary integrity, system accounts with passwords, `/etc/hosts` hijacking, binary integrity (debsums/dpkg-V/rpm-Va), ld.so.preload, ELF in staging dirs, kernel modules, listening ports, hidden ports (rootkit detection), firewall NAT hijacking, xinetd, crontabs, at jobs, systemd timers, shell profiles, SUID/SGID (known-good whitelist), PwnKit, capabilities, sudoers NOPASSWD, PAM pam_exec, sshd_config directives, SSH keys, immutable files, scored services, world-writable dirs, recently modified binaries, suspicious processes, deleted executables, auth failures. Numbered findings summary at end.
 
-**Configuration:** Edit the `SCORED_SERVICES` and `KNOWN_SUID` arrays at the top of the script to match your competition's scored services.
+**Config:** Edit `SCORED_SERVICES` and `KNOWN_SUID` arrays.
 
 ---
 
 ## [@dn_install.sh](./@dn_install.sh)
 
-defined.net dnclient one-step install — downloads, installs, starts, and enrolls the dnclient server binary.
+One-step defined.net dnclient install + enroll.
 
-**What it does:**
-1. Detects OS and architecture
-2. Fetches the latest download URL from the defined.net API
-3. Downloads the dnclient binary
-4. Installs to `/usr/local/bin` (configurable via `DN_INSTALL_DIR`)
-5. Installs and starts the dnclient service (auto-starts on boot)
-6. Enrolls the host with the provided enrollment code
-
-**Usage:**
 ```bash
-sudo ./dn_install.sh ABCD-1234-EFGH-5678
-
-# Custom install directory:
-DN_INSTALL_DIR=/opt/dn sudo ./dn_install.sh ABCD-1234-EFGH-5678
+sudo ./dn_install.sh <ENROLL_CODE>
+# Custom dir: DN_INSTALL_DIR=/opt/dn sudo ./dn_install.sh <CODE>
 ```
 
 ---
 
 ## [@dn_enroll.sh](./@dn_enroll.sh)
 
-defined.net CTF mass host enrollment — creates hosts via the defined.net API and prints one-liner enrollment commands.
+Mass host enrollment via defined.net API. Prints enrollment one-liner for each host.
 
-**What it does:**
-- For each host name argument, creates a host on the defined.net network via API
-- Prints the assigned IP and enrollment command for each host
-- Requires `curl` and `jq`
-
-**Configuration:** Set `DN_API_KEY` and `DN_NETWORK_ID` environment variables (required). Optionally set `DN_ROLE_ID` to assign a role.
-
-**Usage:**
 ```bash
-# Enroll multiple hosts:
-DN_API_KEY=xxx DN_NETWORK_ID=network-XXXXXXX ./dn_enroll.sh kali-1 kali-2 ubuntu-target
-
-# With a role:
-DN_API_KEY=xxx DN_NETWORK_ID=network-XXXXXXX DN_ROLE_ID=role-XXXXXXX ./dn_enroll.sh db-server
+DN_API_KEY=xxx ./dn_enroll.sh kali-1 kali-2 ubuntu-target
 ```
+
+Defaults: `DN_NETWORK_ID=network-JC2XSVID2IICN3ZZXYZ3JOW65E`, `DN_ROLE_ID=role-5JSB3SLU2BJIOGYP3KP6APTJQM`
 
 ---
 
 ## [@doctor.sh](./@doctor.sh)
 
-Service diagnostic expert system — checks why services are down, validates configs, scans logs for failure patterns.
+*Adapted from [DSU-DefSec/cyber](https://github.com/DSU-DefSec/cyber)*
 
-**Services supported:** Apache, Nginx, OpenSSH, PostgreSQL, MySQL/MariaDB, vsftpd, Samba, BIND DNS
+Service diagnostics — why is it down? Checks running status, config syntax, listening address, and scans journal logs for common failures (port conflicts, permission denied, syntax errors, segfaults, OOM, TLS errors).
 
-**What it does for each service:**
-- Checks if service is running (with restart count/crashloop detection)
-- Validates config syntax (apachectl, nginx -t, sshd -t, testparm, named-checkconf)
-- Checks if service is listening on the correct port and interface (localhost-only flagged)
-- Scans journal logs for common failure patterns (port conflicts, permission denied, syntax errors, segfaults, OOM, TLS errors)
+**Supports:** Apache, Nginx, OpenSSH, PostgreSQL, MySQL/MariaDB, vsftpd, Samba, BIND DNS
 
-**Usage:**
 ```bash
 sudo ./doctor.sh
 ```
@@ -183,156 +108,82 @@ sudo ./doctor.sh
 
 ## [@fruit.sh](./@fruit.sh)
 
-Service config misconfiguration audit — scans config files for vulnerable settings with severity ratings and fix suggestions.
+*Adapted from [DSU-DefSec/cyber](https://github.com/DSU-DefSec/cyber)*
 
-**Services checked:**
-- **apache2** — directory listing, FollowSymLinks, AllowOverride, TRACE, weak TLS, server-status exposure, ExecCGI, SSI
-- **nginx** — autoindex, weak TLS protocols, weak cipher groups
-- **openssh** — root login, empty passwords, SSHv1, password auth, MaxAuthTries, weak ciphers, AllowUsers, AuthorizedKeysFile/Command, StrictModes, forwarding, X11, UsePAM
-- **vsftpd** — anonymous access, anonymous upload, chroot, SSL/TLS
-- **samba** — null passwords, guest access, map to guest, SMB signing, SMBv1/EternalBlue, encryption, anonymous enumeration
-- **bind** — open recursion, zone transfers, allow-query, dynamic updates, version string
-- **postgres** — listen_addresses, SSL, password_encryption, pg_hba trust/md5 entries, broad remote rules
-- **mysql** — skip-grant-tables, local-infile, bind-address, secure-file-priv
-- **php** — allow_url_include (RFI), allow_url_fopen (SSRF), disable_functions
-- **cron** — writable cron files, netcat reverse shells, /tmp execution, base64 decoding, IP downloads, interpreter one-liners
-- **sudoers** — NOPASSWD, !authenticate, writable sudoers.d files
+Service config audit — scans for vulnerable misconfigurations with severity ratings and fix suggestions.
 
-**Usage:**
+**Services:** apache2, nginx, openssh, vsftpd, samba, bind, postgres, mysql, php, cron, sudoers
+
 ```bash
-# Check all services:
-sudo ./fruit.sh
-
-# Check specific services:
-sudo ./fruit.sh openssh vsftpd samba
+sudo ./fruit.sh              # all services
+sudo ./fruit.sh openssh samba  # specific services
 ```
 
 ---
 
 ## [@watchdog.sh](./@watchdog.sh)
 
-tmux monitoring dashboard — opens a multi-pane session with live monitoring tools. Filters loopback noise to keep output clean.
+tmux monitoring dashboard — filters localhost noise.
 
-**Panes (all filter out localhost noise):**
-- **Top-left:** Process monitor (pspy64 from `tools/` if available, else find-based watcher on `/etc /home /root /var/spool`)
-- **Top-right:** Network connections (listening + established, non-loopback only)
-- **Bottom-left:** Auth log (filtered: Failed, Accepted, sudo, useradd/del, passwd, su)
-- **Bottom-right:** Logged-in users + non-loopback listening ports
+- **Top-left:** Process monitor (pspy64 or find-based)
+- **Top-right:** Network (non-loopback listening + established)
+- **Bottom-left:** Auth log (Failed/Accepted/sudo/useradd only)
+- **Bottom-right:** Users + non-loopback listening ports
+- **Window 2:** Audit re-runs every 15 min
+- **Window 3:** Shell
 
-**Additional windows:**
-- **audit:** Re-runs `03_audit.sh` every 15 minutes
-- **shell:** Interactive shell
-
-**Usage:**
 ```bash
-sudo ./watchdog.sh
-# Reconnect: sudo ./watchdog.sh  (auto-attaches to existing session)
+sudo ./watchdog.sh    # reattach if already running
 ```
 
-**Prerequisites:** `bash tools/setup.sh` (downloads pspy64 and other tools)
+Requires: `bash tools/setup.sh` for pspy64.
 
 ---
 
 ## [@gravwell_setup.sh](./@gravwell_setup.sh)
 
-**Centralized Logging to Gravwell (Optional)**
+Centralized logging to Gravwell. Sends falco, auth, syslog, aide, kern, cron logs.
 
-Installs and configures Gravwell File Follower to send logs from this host to a central Gravwell indexer.
-
-**What it ingests:**
-- `tag=falco` - Falco runtime detection events
-- `tag=auth` - SSH/authentication logs
-- `tag=syslog` - System logs
-- `tag=aide` - AIDE file integrity checks
-- `tag=kern` - Kernel logs
-- `tag=cron` - Cron logs
-
-**Usage:**
 ```bash
-# Interactive (prompts for Gravwell host/secret):
-curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/@gravwell_setup.sh | sudo bash
+# Interactive:
+sudo ./gravwell_setup.sh
 
 # Non-interactive:
-GRAVWELL_HOST=10.0.0.5 GRAVWELL_SECRET=MySecret curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/@gravwell_setup.sh | sudo bash
+GRAVWELL_HOST=10.0.0.5 GRAVWELL_SECRET=secret sudo ./gravwell_setup.sh
 ```
-
-**Key Files Created:**
-- `/opt/gravwell/etc/file_follow.conf` - Gravwell ingester configuration
-
-**Services:**
-- `gravwell_file_follow.service` - Gravwell File Follower ingester
-
-**Useful Gravwell Queries:**
-```
-# High-severity Falco alerts
-tag=falco json priority rule output | grep -e priority "Critical" "Error" | table
-
-# AIDE file changes
-tag=aide grep -e "Added" "Removed" "Changed" | table
-
-# SSH login attempts
-tag=auth grep -e "Failed password" "Accepted publickey" | table
-
-# Timeline of all security events
-tag=falco,auth,aide count by time | chart count
-
-# Failed SSH by source IP
-tag=auth grep "Failed password" | regex "from (?P<ip>\S+)" | count by ip | table
-```
-
-**Network Requirements:**
-- Gravwell indexer must be reachable on port 4023 (cleartext) or 4024 (TLS)
-- No firewall blocking between host and Gravwell server
 
 ---
 
 ## [@init_overview.sh](./@init_overview.sh)
 
-Initial machine cleanup — run first thing on a fresh image.
+Initial machine cleanup. Clears `/tmp`, removes `ld.so.preload`, removes immutable flags, changes current user shell to `/bin/bash`, nukes all crontabs and masks cron.
 
-**What it does:**
-- Clears `/tmp` and removes `/etc/ld.so.preload` (common LD_PRELOAD hijack)
-- Prints OS info, active users, and connections
-- Checks for tainted kernel
-- Removes immutable flags from `/etc` and `/usr` (undoes `chattr +i` persistence)
-- Changes default shell to `/bin/bash` for current user
-- Removes all crontabs and masks the cron daemon
-
-**Warning:** This is aggressive — it deletes all cron jobs and masks cron entirely. Make sure no scored services depend on cron.
+**Warning:** Deletes all cron jobs and masks cron. Make sure no scored services depend on cron.
 
 ---
 
 ## [@ftp_setup.sh](./@ftp_setup.sh)
 
-FTP server setup for scoring — configures vsftpd with a scoring group and user whitelist.
+FTP scoring setup — creates scoring group/directory, configures vsftpd (no anonymous, chroot, userlist).
 
-**What it does:**
-- Creates `scoring` group
-- Creates scoring directory with correct permissions (setgid 2770)
-- Adds scoring users to group and vsftpd userlist
-- Sets scoring users' shell to `/usr/sbin/nologin` and home to the scoring directory
-- Writes hardened `vsftpd.conf` (no anonymous, chroot, passive mode, userlist deny)
-- Restarts vsftpd
+**Config:** Edit `SCORING_USERS` and `SCORING_DIRECTORY`.
 
-**Configuration:** Edit `SCORING_USERS` and `SCORING_DIRECTORY` at the top of the script before running.
+---
+
+## [@smb_setup.sh](./@smb_setup.sh)
+
+SMB scoring setup — creates scoring group/directory, configures smbd (SMB3, encrypted, no guest).
+
+**Config:** Edit `SCORING_USERS`, `SCORING_PASSWORDS`, `SCORING_DIRECTORY`.
+
+---
+
+## [@monitor.sh](./@monitor.sh)
+
+Simple loop — shows `w` and `ss -tulnp` every 2 seconds.
 
 ---
 
 ## [backups.sh](./backups.sh)
 
-Performs both local and remote backups of important directories.
-
-- Author: Christopher Reed
-- Must be run with sudo.
-
-**Key Files Created/Used:**
-- `/root/backups/` - Local backup directory
-- `/root/backups/etc_backup.txt` - Backup log for /etc
-- `/root/backups/home_backup.txt` - Backup log for /home
-- `/root/backups/var_backup.txt` - Backup log for /var/log
-- `/root/backups/lib_backup.txt` - Backup log for /lib/systemd
-- `/root/backups/bin_backup.txt` - Backup log for /usr/bin
-- `/root/backups/sbin_backup.txt` - Backup log for /usr/sbin
-- `/root/backups/curr_backup.txt` - Current remote backup log
-- `/root/backup_key` - SSH key for remote backups
-- `backups@192.168.2.15:~/backups/` - Remote backup location
+Local and remote backups of `/etc`, `/home`, `/var/log`, `/lib/systemd`, `/usr/bin`, `/usr/sbin`. Must run as root.
