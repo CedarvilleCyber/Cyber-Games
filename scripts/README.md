@@ -13,6 +13,7 @@ Scripts for hardening and auditing Linux machines during NCAE cyber competitions
 - [@gravwell_setup.sh](#gravwell_setupsh) - Centralized logging to Gravwell
 - [@init_overview.sh](#init_overviewsh) - Initial machine cleaning (crontabs, immutability, /tmp)
 - [@ftp_setup.sh](#ftp_setupsh) - FTP server setup for scoring
+- [@smb_setup.sh](#smb_setupsh) - SMB server setup for scoring
 
 ### Utility Scripts
 - [backups.sh](#backupssh) - Local and remote backups of important directories
