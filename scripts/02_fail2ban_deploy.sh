@@ -7,16 +7,27 @@
 
 set -euo pipefail
 
-echo "========================================="
-echo "  FAIL2BAN DEPLOYMENT"
-echo "========================================="
+# ============================================================================
+# COLORS
+# ============================================================================
+
+RED='\033[1;31m'
+YEL='\033[1;33m'
+GRN='\033[1;32m'
+GRAY='\033[2m'
+BOLD='\033[1m'
+RST='\033[0m'
 
 if [[ $(id -u) -ne 0 ]]; then
-    echo "[!] Run this script as root."
+    echo -e "${RED}[!] Run this script as root.${RST}"
     exit 1
 fi
 
-echo "[1] Installing fail2ban"
+echo -e "${BOLD}=========================================${RST}"
+echo -e "${BOLD}  FAIL2BAN DEPLOYMENT${RST}"
+echo -e "${BOLD}=========================================${RST}"
+
+echo -e "${GRN}[+] Installing fail2ban${RST}"
 
 # Detect OS and install
 if command -v apt-get &>/dev/null; then
@@ -29,11 +40,11 @@ elif command -v yum &>/dev/null; then
     yum install -y epel-release
     yum install -y fail2ban
 else
-    echo "[!] Unsupported OS - install fail2ban manually"
+    echo -e "${RED}[!] Unsupported OS - install fail2ban manually${RST}"
     exit 1
 fi
 
-echo "[2] Configuring fail2ban"
+echo -e "${GRN}[+] Configuring fail2ban${RST}"
 
 # Backup original config
 cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.conf.backup 2>/dev/null || true
@@ -89,21 +100,20 @@ logpath = /var/log/nginx/error.log
 maxretry = 6
 F2B_EOF
 
-echo "[3] Starting fail2ban service"
+echo -e "${GRN}[+] Starting fail2ban service${RST}"
 systemctl enable fail2ban
 systemctl start fail2ban
-systemctl status fail2ban --no-pager
 
-echo "[4] Checking fail2ban status"
+echo -e "${GRN}[+] Checking fail2ban status${RST}"
 sleep 3
 fail2ban-client status
 
 echo ""
-echo "========================================="
-echo "  FAIL2BAN DEPLOYED"
-echo "========================================="
+echo -e "${BOLD}=========================================${RST}"
+echo -e "${GRN}${BOLD}  FAIL2BAN DEPLOYED${RST}"
+echo -e "${BOLD}=========================================${RST}"
 echo ""
-echo "Monitor with:"
-echo "  fail2ban-client status sshd"
-echo "  fail2ban-client get sshd banned"
-echo "  tail -f /var/log/fail2ban.log"
+echo -e "${GRAY}Monitor with:${RST}"
+echo -e "${GRAY}  fail2ban-client status sshd${RST}"
+echo -e "${GRAY}  fail2ban-client get sshd banned${RST}"
+echo -e "${GRAY}  tail -f /var/log/fail2ban.log${RST}"

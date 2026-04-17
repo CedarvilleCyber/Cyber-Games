@@ -7,6 +7,17 @@
 set -euo pipefail
 
 # ============================================================================
+# COLORS
+# ============================================================================
+
+RED='\033[1;31m'
+YEL='\033[1;33m'
+GRN='\033[1;32m'
+GRAY='\033[2m'
+BOLD='\033[1m'
+RST='\033[0m'
+
+# ============================================================================
 # EMBEDDED DATA — no external files required
 # ============================================================================
 
@@ -79,6 +90,12 @@ ALLOWED_USERS=(
     # "bob"
 )
 
+# Additional whitelisted users — never delete these even with --delete-users
+WHITELISTED_USERS=(
+    # "alice"
+    # "bob"
+)
+
 # ============================================================================
 # PRE-FLIGHT
 # ============================================================================
@@ -87,11 +104,11 @@ SSHD_CONFIG="/etc/ssh/sshd_config"
 BACKUP_SUFFIX=".bak.$(date +%s)"
 
 if [[ $(id -u) -ne 0 ]]; then
-    echo "[!] Run this script as root."
+    echo -e "${RED}[!] Run this script as root.${RST}"
     exit 1
 fi
 
-ALL_PROTECTED=("${PROTECTED_USERS[@]}" ${ALLOWED_USERS[@]+"${ALLOWED_USERS[@]}"} "${SCORING_USERS[@]}")
+ALL_PROTECTED=("${PROTECTED_USERS[@]}" ${ALLOWED_USERS[@]+"${ALLOWED_USERS[@]}"} "${SCORING_USERS[@]}" ${WHITELISTED_USERS[@]+"${WHITELISTED_USERS[@]}"})
 
 is_protected() {
     local check="$1"
@@ -107,23 +124,23 @@ is_protected() {
     return 1
 }
 
-echo "========================================="
-echo "  SSH LOCKDOWN (STANDALONE)"
-echo "========================================="
-echo "[*] Protected users: ${ALL_PROTECTED[*]}"
+echo -e "${BOLD}=========================================${RST}"
+echo -e "${BOLD}  SSH LOCKDOWN${RST}"
+echo -e "${BOLD}=========================================${RST}"
+echo -e "${GRAY}Protected users: ${ALL_PROTECTED[*]}${RST}"
 echo ""
 
 # ============================================================================
 # 1. CREATE BLUETEAM USER & SET PASSWORDS
 # ============================================================================
 
-echo "[1] Setting up blueteam user and passwords"
+echo -e "${GRN}[+] Setting up blueteam user and passwords${RST}"
 
 # Check if passwords provided via environment variables
 if [[ -n "${ROOT_PASSWORD:-}" && -n "${BLUETEAM_PASSWORD:-}" ]]; then
     ROOT_PW="$ROOT_PASSWORD"
     BLUETEAM_PW="$BLUETEAM_PASSWORD"
-    echo "    -> Using passwords from environment variables"
+    echo -e "${GRAY}  Using passwords from environment variables${RST}"
 # Check if we can read from terminal (not piped)
 elif [[ -t 0 ]]; then
     read -sp "    Enter password for root: " ROOT_PW < /dev/tty
@@ -132,50 +149,45 @@ elif [[ -t 0 ]]; then
     echo ""
 else
     # Script is piped - generate random passwords
-    echo "    -> Script piped: generating random passwords"
     ROOT_PW=$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-16)
     BLUETEAM_PW=$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-16)
 
     echo ""
-    echo "╔════════════════════════════════════════════════════════════════╗"
-    echo "║                                                                ║"
-    echo "║         GENERATED PASSWORDS - COPY/SCREENSHOT NOW!             ║"
-    echo "║                                                                ║"
-    echo "╠════════════════════════════════════════════════════════════════╣"
-    echo "║                                                                ║"
-    echo "║  root password:     ${ROOT_PW}                           ║"
-    echo "║  blueteam password: ${BLUETEAM_PW}                           ║"
-    echo "║                                                                ║"
-    echo "╚════════════════════════════════════════════════════════════════╝"
+    echo -e "${RED}${BOLD}╔════════════════════════════════════════════════════════════════╗${RST}"
+    echo -e "${RED}${BOLD}║         GENERATED PASSWORDS - COPY/SCREENSHOT NOW!             ║${RST}"
+    echo -e "${RED}${BOLD}╠════════════════════════════════════════════════════════════════╣${RST}"
+    echo -e "${RED}${BOLD}║  root password:     ${ROOT_PW}                           ║${RST}"
+    echo -e "${RED}${BOLD}║  blueteam password: ${BLUETEAM_PW}                           ║${RST}"
+    echo -e "${RED}${BOLD}╚════════════════════════════════════════════════════════════════╝${RST}"
     echo ""
-    echo "    [!] Passwords NOT saved to disk for security"
-    echo "    [!] Copy them NOW - waiting 10 seconds..."
+    echo -e "${RED}[!] Passwords NOT saved to disk — copy them NOW${RST}"
+    echo -e "${GRAY}    Waiting 10 seconds...${RST}"
     echo ""
 
-    sleep 10  # Give time to screenshot/copy
+    sleep 10
 fi
 
 # Validate passwords are not empty
 if [[ -z "$ROOT_PW" || -z "$BLUETEAM_PW" ]]; then
-    echo "[!] ERROR: Passwords cannot be empty"
+    echo -e "${RED}[!] ERROR: Passwords cannot be empty${RST}"
     exit 1
 fi
 
 if ! id "blueteam" &>/dev/null; then
     useradd -m -s /bin/bash blueteam
-    echo "    -> Created blueteam user"
+    echo -e "${GRAY}  Created blueteam user${RST}"
 fi
 
 SUDO_GROUP="sudo"
 grep -q "^wheel:" /etc/group && SUDO_GROUP="wheel"
 
 usermod -aG "$SUDO_GROUP" blueteam 2>/dev/null || true
-echo "    -> blueteam added to $SUDO_GROUP"
+echo -e "${GRAY}  blueteam added to ${SUDO_GROUP}${RST}"
 
 echo "root:${ROOT_PW}" | chpasswd
-echo "    -> root password set"
+echo -e "${GRAY}  root password set${RST}"
 echo "blueteam:${BLUETEAM_PW}" | chpasswd
-echo "    -> blueteam password set"
+echo -e "${GRAY}  blueteam password set${RST}"
 
 unset ROOT_PW BLUETEAM_PW
 
@@ -183,14 +195,14 @@ unset ROOT_PW BLUETEAM_PW
 # 2. BACKUP
 # ============================================================================
 
-echo "[2] Backing up $SSHD_CONFIG"
+echo -e "${GRN}[+] Backing up ${SSHD_CONFIG}${RST}"
 cp "$SSHD_CONFIG" "${SSHD_CONFIG}${BACKUP_SUFFIX}"
 
 # ============================================================================
 # 3. HARDENED sshd_config
 # ============================================================================
 
-echo "[3] Writing hardened sshd_config"
+echo -e "${GRN}[+] Writing hardened sshd_config${RST}"
 cat > "$SSHD_CONFIG" << 'SSHD_EOF'
 Protocol 2
 Port 22
@@ -239,9 +251,9 @@ for u in "${ALL_PROTECTED[@]}"; do
     ALLOW_LINE+=" $u"
 done
 echo "$ALLOW_LINE" >> "$SSHD_CONFIG"
-echo "    -> $ALLOW_LINE"
+echo -e "${GRAY}  ${ALLOW_LINE}${RST}"
 
-echo "[3b] Locking down critical file permissions"
+echo -e "${GRN}[+] Locking down file permissions${RST}"
 chmod 644 /etc/passwd
 chown root:root /etc/passwd
 chmod 640 /etc/shadow
@@ -252,17 +264,17 @@ chmod 600 /etc/ssh/sshd_config
 chown root:root /etc/ssh/sshd_config
 chmod 600 /etc/sudoers
 chown root:root /etc/sudoers
-echo "    -> /etc/passwd:      644 root:root"
-echo "    -> /etc/shadow:      640 root:shadow"
-echo "    -> /etc/group:       644 root:root"
-echo "    -> /etc/ssh/sshd_config: 600 root:root"
-echo "    -> /etc/sudoers:     600 root:root"
+echo -e "${GRAY}  /etc/passwd:      644 root:root${RST}"
+echo -e "${GRAY}  /etc/shadow:      640 root:shadow${RST}"
+echo -e "${GRAY}  /etc/group:       644 root:root${RST}"
+echo -e "${GRAY}  /etc/ssh/sshd_config: 600 root:root${RST}"
+echo -e "${GRAY}  /etc/sudoers:     600 root:root${RST}"
 
 # ============================================================================
 # 4. SUDOERS CLEANUP
 # ============================================================================
 
-echo "[4] Cleaning sudoers"
+echo -e "${GRN}[+] Cleaning sudoers${RST}"
 
 cp /etc/sudoers "/etc/sudoers${BACKUP_SUFFIX}"
 
@@ -278,26 +290,26 @@ SUDOERS_EOF
 if visudo -cf /tmp/sudoers.new &>/dev/null; then
     cp /tmp/sudoers.new /etc/sudoers
     chmod 440 /etc/sudoers
-    echo "    -> /etc/sudoers replaced (root + %${SUDO_GROUP} only)"
+    echo -e "${GRAY}  /etc/sudoers replaced (root + %${SUDO_GROUP} only)${RST}"
 else
-    echo "    -> WARNING: generated sudoers invalid, keeping original"
+    echo -e "${YEL}  WARNING: generated sudoers invalid, keeping original${RST}"
 fi
 rm -f /tmp/sudoers.new
 
-echo "[4b] Wiping /etc/sudoers.d/"
+echo -e "${GRN}[+] Wiping /etc/sudoers.d/${RST}"
 if [[ -d /etc/sudoers.d ]]; then
     for f in /etc/sudoers.d/*; do
-        [[ -f "$f" ]] && mv "$f" "${f}.disabled" && echo "    -> Disabled: $f"
+        [[ -f "$f" ]] && mv "$f" "${f}.disabled" && echo -e "  ${RED}${f} disabled${RST}"
     done
 fi
 
-echo "[4c] Removing non-protected users from ${SUDO_GROUP} group"
+echo -e "${GRN}[+] Removing non-protected users from ${SUDO_GROUP}${RST}"
 for member in $(getent group "$SUDO_GROUP" | cut -d: -f4 | tr ',' ' '); do
     if ! is_protected "$member"; then
         gpasswd -d "$member" "$SUDO_GROUP" 2>/dev/null || true
-        echo "    -> Removed $member from $SUDO_GROUP"
+        echo -e "  ${RED}${member} removed from ${SUDO_GROUP}${RST}"
     else
-        echo "    -> Keeping $member in $SUDO_GROUP"
+        echo -e "${GRAY}  ${member} kept in ${SUDO_GROUP}${RST}"
     fi
 done
 
@@ -305,28 +317,28 @@ done
 # 5. NUKE UNAUTHORIZED KEYS
 # ============================================================================
 
-echo "[5] Cleaning unauthorized SSH keys"
+echo -e "${GRN}[+] Cleaning unauthorized SSH keys${RST}"
 for homedir in /home/*/; do
     username=$(basename "$homedir")
     rm -f "$homedir/.ssh/authorized_keys2"
     if ! is_protected "$username"; then
         rm -rf "$homedir/.ssh"
-        echo "    -> Wiped .ssh for $username"
+        echo -e "  ${RED}Wiped .ssh for ${username}${RST}"
     fi
 done
 rm -f /root/.ssh/authorized_keys2
 rm -f /etc/ssh/authorized_keys /etc/ssh/authorized_keys2
 
-echo "[5b] Removing planted private keys (skipping protected users)"
+echo -e "${GRN}[+] Removing planted private keys${RST}"
 for homedir in /root /home/*; do
     [[ -d "$homedir" ]] || continue
     username=$(basename "$homedir")
     if is_protected "$username"; then
-        echo "    -> Skipping $username (protected)"
+        echo -e "${GRAY}  ${username} (protected)${RST}"
         continue
     fi
     find "$homedir" -type f \( -name "id_rsa*" -o -name "id_ed25519*" -o -name "id_ecdsa*" -o -name "id_dsa*" \) 2>/dev/null | while read -r keyfile; do
-        echo "    -> Removing: $keyfile"
+        echo -e "  ${RED}${keyfile} removed${RST}"
         rm -f "$keyfile"
     done
 done
@@ -335,7 +347,7 @@ done
 # 6. DEPLOY KEYS (inline — no files needed)
 # ============================================================================
 
-echo "[6] Deploying keys"
+echo -e "${GRN}[+] Deploying keys${RST}"
 
 add_key_inline() {
     local key_content="$1"
@@ -359,7 +371,7 @@ add_key_inline() {
 for user in "${SCORING_USERS[@]}"; do
     if id "$user" &>/dev/null; then
         add_key_inline "$SCORING_KEY" "$user"
-        echo "    -> $user: scoring key"
+        echo -e "${GRAY}  ${user}: scoring key${RST}"
     fi
 done
 
@@ -368,7 +380,7 @@ for team_key in "${TEAM_KEYS[@]}"; do
     if [[ -n "$team_key" ]]; then
         add_key_inline "$team_key" "blueteam"
         key_comment=$(echo "$team_key" | awk '{print $NF}')
-        echo "    -> blueteam: $key_comment"
+        echo -e "${GRAY}  blueteam: ${key_comment}${RST}"
     fi
 done
 
@@ -376,7 +388,7 @@ done
 # 7. KILL NON-PROTECTED SESSIONS & REVERSE SHELLS
 # ============================================================================
 
-echo "[7] Killing non-protected sessions"
+echo -e "${GRN}[+] Killing non-protected sessions${RST}"
 MY_PID=$$
 MY_PPID=$(ps -o ppid= -p $MY_PID | tr -d ' ')
 
@@ -386,48 +398,70 @@ while IFS= read -r line; do
     sess_pid=$(echo "$line" | awk '{print $2}')
     [[ "$sess_pid" == "$MY_PID" || "$sess_pid" == "$MY_PPID" ]] && continue
     if ! is_protected "$sess_user"; then
-        echo "    -> KILL $sess_user (PID $sess_pid)"
+        echo -e "  ${RED}KILL ${sess_user} (PID ${sess_pid})${RST}"
         kill -9 "$sess_pid" 2>/dev/null || true
     fi
 done < <(ps aux | grep '[s]shd.*@' || true)
 
-echo "[7b] Killing reverse shells and suspicious processes"
+echo -e "${GRN}[+] Killing reverse shells and suspicious processes${RST}"
 while IFS= read -r line; do
     [[ -z "$line" ]] && continue
     sus_pid=$(echo "$line" | awk '{print $2}')
     sus_cmd=$(echo "$line" | awk '{for(i=11;i<=NF;i++) printf "%s ", $i; print ""}')
     [[ "$sus_pid" == "$MY_PID" || "$sus_pid" == "$MY_PPID" ]] && continue
-    echo "    -> KILL PID $sus_pid: $sus_cmd"
+    echo -e "  ${RED}PID ${sus_pid}: ${sus_cmd}${RST}"
     kill -9 "$sus_pid" 2>/dev/null || true
 done < <(ps aux | grep -E 'nc[[:space:]].*-[ec]|ncat[[:space:]]|bash.*\/dev\/tcp|sh.*\/dev\/tcp|python.*socket|perl.*socket|ruby.*socket|socat' | grep -v grep || true)
 
-echo "[7c] Killing processes with deleted executables"
+echo -e "${GRN}[+] Killing processes with deleted executables${RST}"
 for pid in $(ls -l /proc/*/exe 2>/dev/null | grep '(deleted)' | awk -F'/' '{print $3}'); do
     [[ "$pid" == "$MY_PID" || "$pid" == "$MY_PPID" ]] && continue
-    echo "    -> KILL deleted-exe PID: $pid"
+    echo -e "  ${RED}PID ${pid} (deleted exe)${RST}"
     kill -9 "$pid" 2>/dev/null || true
 done
 
 # ============================================================================
-# 8. LOCK NON-PROTECTED ACCOUNTS
+# 8. REMOVE NON-PROTECTED ACCOUNTS
 # ============================================================================
 
-echo "[8] Locking non-protected accounts"
+echo -e "${GRN}[+] Removing non-protected accounts${RST}"
 while IFS=: read -r username _ uid _ _ homedir shell; do
     [[ "$uid" -lt 1000 && "$username" != "root" ]] && continue
     [[ "$shell" == */nologin || "$shell" == */false ]] && continue
     if ! is_protected "$username"; then
-        passwd -l "$username" 2>/dev/null || true
-        usermod -s /sbin/nologin "$username" 2>/dev/null || true
-        echo "    -> Locked $username"
+        # Kill all processes owned by this user
+        PIDS=$(ps -u "$username" -o pid= 2>/dev/null || true)
+        if [[ -n "$PIDS" ]]; then
+            for pid in $PIDS; do
+                [[ "$pid" -eq "$MY_PID" ]] && continue
+                kill -9 "$pid" 2>/dev/null || true
+            done
+        fi
+        # Remove from sudo/wheel groups
+        gpasswd -d "$username" "$SUDO_GROUP" 2>/dev/null || true
+        gpasswd -d "$username" wheel 2>/dev/null || true
+        # Delete user and home directory
+        userdel -r "$username" 2>/dev/null || {
+            userdel "$username" 2>/dev/null || true
+            [[ -d "/home/$username" ]] && rm -rf "/home/$username"
+        }
+        echo -e "  ${RED}${username} removed${RST}"
     fi
 done < /etc/passwd
 
 # ============================================================================
-# 9. DISABLE INCLUDE OVERRIDES
+# 9. PURGE TEMP DIRECTORIES
 # ============================================================================
 
-echo "[9] Disabling sshd_config.d"
+echo -e "${GRN}[+] Purging temp directories${RST}"
+find /tmp /var/tmp /dev/shm -mindepth 1 -delete 2>/dev/null || true
+echo -e "${GRAY}  /tmp /var/tmp /dev/shm cleared${RST}"
+
+# ============================================================================
+# 10. DISABLE INCLUDE OVERRIDES
+# ============================================================================
+
+echo -e "${GRN}[+] Disabling sshd_config.d${RST}"
 if [[ -d /etc/ssh/sshd_config.d ]]; then
     for f in /etc/ssh/sshd_config.d/*.conf; do
         [[ -f "$f" ]] && mv "$f" "${f}.disabled"
@@ -435,81 +469,28 @@ if [[ -d /etc/ssh/sshd_config.d ]]; then
 fi
 
 # ============================================================================
-# 10. RESTART SSHD
+# 11. RESTART SSHD
 # ============================================================================
 
-echo "[10] Restarting sshd"
+echo -e "${GRN}[+] Restarting sshd${RST}"
 systemctl restart sshd 2>/dev/null || systemctl restart ssh 2>/dev/null || true
 
 # ============================================================================
-# 11. VALIDATE
+# 12. VALIDATE
 # ============================================================================
 
 echo ""
-echo "[11] Validation"
-sshd -t 2>&1 && echo "    sshd_config: OK" || echo "    sshd_config: FAILED"
-echo "    Sessions:"
-who 2>/dev/null || echo "    (none)"
+echo -e "${GRN}[+] Validation${RST}"
+sshd -t 2>&1 && echo -e "${GRAY}  sshd_config: OK${RST}" || echo -e "${RED}  sshd_config: FAILED${RST}"
+echo -e "${GRAY}  Sessions:${RST}"
+who 2>/dev/null || echo -e "${GRAY}  (none)${RST}"
 grep "^AllowUsers" "$SSHD_CONFIG"
 
-# ============================================================================
-# 12. SECURITY AUDIT
-# ============================================================================
-
 echo ""
-echo "[12] Security audit"
-
-echo "    UID 0 accounts (only root should exist):"
-awk -F: '$3 == 0 {print "       " $1}' /etc/passwd
-
-echo "    SUID files in temp directories:"
-SUID_TEMP=$(find /tmp /var/tmp /dev/shm /opt -perm -4000 -type f 2>/dev/null)
-if [[ -n "$SUID_TEMP" ]]; then
-    echo "$SUID_TEMP" | while read -r f; do
-        echo "       [!] $f"
-        rm -f "$f"
-        echo "           REMOVED"
-    done
-else
-    echo "       (clean)"
-fi
-
-echo "    Listening ports:"
-ss -tulpn 2>/dev/null | grep LISTEN | awk '{printf "       %s %s\n", $5, $7}' | sort -u
-
+echo -e "${BOLD}=========================================${RST}"
+echo -e "${GRN}${BOLD}  LOCKDOWN COMPLETE${RST}"
+echo -e "${BOLD}=========================================${RST}"
 echo ""
-echo "    Listing all aliases and functions for manual review:"
-for homedir in /root /home/*; do
-    [[ -d "$homedir" ]] || continue
-    username=$(basename "$homedir")
-    for rcfile in .bashrc .bash_profile .profile .bash_login .bash_logout; do
-        filepath="$homedir/$rcfile"
-        [[ -f "$filepath" ]] || continue
-        ALIASES=$(grep -n '^[[:space:]]*alias\|^[[:space:]]*function\|^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*()' "$filepath" 2>/dev/null)
-        if [[ -n "$ALIASES" ]]; then
-            echo "       $filepath:"
-            echo "$ALIASES" | while read -r line; do
-                echo "           $line"
-            done
-        fi
-    done
-done
-for sysfile in /etc/bash.bashrc /etc/profile /etc/profile.d/*.sh /etc/environment; do
-    [[ -f "$sysfile" ]] || continue
-    ALIASES=$(grep -n '^[[:space:]]*alias\|^[[:space:]]*function\|^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*()' "$sysfile" 2>/dev/null)
-    if [[ -n "$ALIASES" ]]; then
-        echo "       $sysfile:"
-        echo "$ALIASES" | while read -r line; do
-            echo "           $line"
-        done
-    fi
-done
-
-echo ""
-echo "========================================="
-echo "  LOCKDOWN COMPLETE"
-echo "========================================="
-echo ""
-echo "[!] IMPORTANT: Take a VM snapshot now!"
-echo "    This locks in your hardened state for quick recovery"
-echo "    if the red team breaks something later."
+echo -e "${YEL}[!] Take a VM snapshot now!${RST}"
+echo -e "${GRAY}    This locks in your hardened state for quick recovery${RST}"
+echo -e "${GRAY}    if the red team breaks something later.${RST}"
