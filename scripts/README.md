@@ -70,21 +70,40 @@ Disables unnecessary services and scans for threats. Output is color-coded: **re
 **Audit checks (printed):**
 - Suspicious services (unusual paths or names)
 - Non-root UID 0 accounts
-- SUID/SGID binaries (temp dirs removed, `/opt` flagged for review, system-wide scan flags unusual locations)
-- PwnKit check (pkexec SUID)
-- Unusual listening ports
+- User default shells (flags nonstandard shells)
+- nologin/false binary integrity (shell strings inside binary, missing denial strings, `/etc/shells` listing)
+- System accounts with passwords
+- `/etc/hosts` hijacking (non-loopback entries)
+- Binary integrity (`debsums`/`dpkg -V`/`rpm -Va` checksums)
+- `ld.so.preload` and `ld.so.conf.d` suspicious paths, `LD_PRELOAD` env var
+- ELF binaries in staging directories (`/tmp`, `/dev/shm`, `/var/tmp`)
+- Kernel modules from unusual paths
+- Listening ports (with process binary)
+- Hidden ports (`/proc/net/tcp` vs `ss` mismatch — rootkit detection)
+- Firewall NAT hijacking (nftables/iptables DNAT/REDIRECT)
 - xinetd services
 - Crontabs (suspicious patterns in system cron, **any** user/root crontab entries highlighted since nothing should exist during comp)
+- `at` jobs
 - Systemd timers (suspicious paths or commands)
 - Shell profiles for backdoor aliases (nc, socat, /dev/tcp, curl|sh, etc.)
+- SUID/SGID binaries (temp dirs removed, known-good whitelist, `/opt` flagged for review, `/home` flagged)
+- PwnKit check (pkexec SUID)
+- Elevated capabilities (`getcap`)
+- sudoers NOPASSWD ALL
+- PAM `pam_exec` (command execution on auth)
+- sshd_config dangerous directives (PermitRootLogin yes, PermitEmptyPasswords yes, GatewayPorts yes, non-standard AuthorizedKeysFile)
+- SSH authorized keys per user
+- Immutable files (`lsattr` on critical configs)
 - Scored services (running vs down)
 - World-writable directories (outside /tmp, /var/tmp, /dev/shm)
-- Recently modified system files (24h)
+- Recently modified system binaries (7 days)
 - Suspicious processes (reverse shells, netcat, etc.)
+- Processes with deleted executables
 - Active network connections
 - Recent authentication failures
+- Numbered findings summary
 
-**Configuration:** Edit the `SCORED_SERVICES` array at the top of the script to match your competition's scored services.
+**Configuration:** Edit the `SCORED_SERVICES` and `KNOWN_SUID` arrays at the top of the script to match your competition's scored services.
 
 ---
 

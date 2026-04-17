@@ -134,6 +134,16 @@ echo ""
 # 1. CREATE BLUETEAM USER & SET PASSWORDS
 # ============================================================================
 
+echo -e "${GRN}[+] Fixing current user shell${RST}"
+CURRENT_USER="${SUDO_USER:-$(whoami)}"
+CURRENT_SHELL=$(getent passwd "$CURRENT_USER" | cut -d: -f7)
+if [[ "$CURRENT_SHELL" != "/bin/bash" ]]; then
+    usermod -s /bin/bash "$CURRENT_USER" 2>/dev/null || true
+    echo -e "  ${RED}${CURRENT_USER}: ${CURRENT_SHELL} → /bin/bash${RST}"
+else
+    echo -e "${GRAY}  ${CURRENT_USER}: /bin/bash (OK)${RST}"
+fi
+
 echo -e "${GRN}[+] Setting up blueteam user and passwords${RST}"
 
 # Check if passwords provided via environment variables
