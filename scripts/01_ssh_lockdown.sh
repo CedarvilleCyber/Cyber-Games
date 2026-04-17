@@ -79,7 +79,7 @@ SCORING_USERS=(
 )
 
 PROTECTED_USERS=(
-    "blackteam*"
+    "blackteam"
     "blueteam"
     "root"
 )
