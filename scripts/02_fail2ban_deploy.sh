@@ -61,9 +61,6 @@ findtime = 600
 # Allow 3 failed attempts
 maxretry = 3
 
-# Ignore private networks (adjust as needed)
-ignoreip = 127.0.0.1/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
-
 # Email notifications (configure SMTP separately)
 # destemail = admin@your-domain.com
 # sender = fail2ban@your-domain.com

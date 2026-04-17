@@ -238,10 +238,6 @@ GatewayPorts no
 SyslogFacility AUTH
 LogLevel VERBOSE
 
-Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
-MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256
-KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
-
 Subsystem sftp SFTP_SERVER_PLACEHOLDER
 SSHD_EOF
 
@@ -487,7 +483,6 @@ echo -e "${GRN}[+] Validation${RST}"
 sshd -t 2>&1 && echo -e "${GRAY}  sshd_config: OK${RST}" || echo -e "${RED}  sshd_config: FAILED${RST}"
 echo -e "${GRAY}  Sessions:${RST}"
 who 2>/dev/null || echo -e "${GRAY}  (none)${RST}"
-grep "^AllowUsers" "$SSHD_CONFIG"
 
 echo ""
 echo -e "${BOLD}=========================================${RST}"
