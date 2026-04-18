@@ -19,7 +19,7 @@ SCORING_USERS=(
     "leominster"
     "tewksbury"
 )
-SCORING_DIRECTORY="/home/stephen_fair/test"
+SCORING_DIRECTORY="/mnt/files"
 CONFIG="/etc/samba/smb.conf"
 
 # ============================================================================
