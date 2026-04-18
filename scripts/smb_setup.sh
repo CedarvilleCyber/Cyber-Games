@@ -52,6 +52,7 @@ cat > "$CONFIG" << EOF
    security = user
    map to guest = Never
    smb encrypt = required
+   min password age = 3153600000
    server min protocol = SMB3
    client min protocol = SMB3
    log file = /var/log/samba/log.%m
