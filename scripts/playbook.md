@@ -41,7 +41,7 @@ if anything flags and looks eggregious then either fix it or flag it with someon
 next setup fail2ban
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/02_fail2ban.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/02_fail2ban_deploy.sh | sudo bash
 ```
 
 ### firewall goes up here and you get internet access
