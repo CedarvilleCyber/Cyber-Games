@@ -58,24 +58,11 @@ TEAM_KEYS=(
 )
 
 SCORING_USERS=(
-  clancy
-  todd_k
-  torch_bearer
-  ned
-  trash
-  blurry_face
-  nico
-  keons
-  sacarvo
-  listo
-  lisdn
-  reisdro
-  vetomo
-  nills
-  vialists
-  simone_weil
-  henri_cartan
-  claude_chevalley
+  gloucester
+  scituate
+  leicester
+  leominster
+  tewksbury
 )
 
 PROTECTED_USERS=(
