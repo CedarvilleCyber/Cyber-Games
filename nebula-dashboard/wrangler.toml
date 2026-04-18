@@ -1,0 +1,6 @@
+name = "nebula-dashboard"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+DN_API_KEY = "dnkey-IPZ2RRVO22WB3SLPUJW5TTCYMU-TV7EPJ2OZLBA3JALZOXMVLAYSS3QUHWQOOXPFOMWUTM5NNN4DJ5Q"
