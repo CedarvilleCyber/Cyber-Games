@@ -2,45 +2,40 @@ version: '3.8'
 
 networks:
   snb_net:
-    driver: macvlan
-    driver_opts:
-      parent: ens18
-    ipam:
-      config:
-        - subnet: 192.168.3.0/24
-          gateway: 192.168.3.1 # Replace with your actual network gateway
+    driver: bridge
 
 services:
-  dns:
-    build:
-      context: .
-      dockerfile: dns/Dockerfile
-    networks:
-      snb_net:
-        ipv4_address: 192.168.3.12
-    environment:
-      - TEAM_IP=192.168.3.12
-    restart: unless-stopped
-    ports:
-      - "53:53/udp"
-      - "53:53/tcp"
-
   bastion:
     build:
       context: .
       dockerfile: bastion/Dockerfile
     networks:
-      snb_net:
-        ipv4_address: 192.168.3.10
+      - snb_net
     restart: unless-stopped
+    ports:
+      - "192.168.3.5:22:22"
+      - "192.168.3.7:22:22"
+      - "192.168.3.12:22:22"
+
+  dns:
+    build:
+      context: .
+      dockerfile: dns/Dockerfile
+    networks:
+      - snb_net
+    environment:
+      - TEAM_IP=192.168.3.12
+    restart: unless-stopped
+    ports:
+      - "192.168.3.12:53:53/udp"
+      - "192.168.3.12:53:53/tcp"
 
   db:
     build:
       context: .
       dockerfile: db/Dockerfile
     networks:
-      snb_net:
-        ipv4_address: 192.168.3.7
+      - snb_net
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -59,10 +54,9 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     networks:
-      snb_net:
-        ipv4_address: 192.168.3.6
+      - snb_net
     environment:
-      - DATABASE_URL=postgresql://user:password@192.168.3.7:5432/national_bank
+      - DATABASE_URL=postgresql://user:password@db:5432/national_bank
       - FRONTEND_URL=https://192.168.3.5
       - JWT_SECRET=5d7845ac6ee7cfffafc5fe5f35cf666d
     depends_on:
@@ -74,8 +68,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
     networks:
-      snb_net:
-        ipv4_address: 192.168.3.11
+      - snb_net
     environment:
       - NEXT_PUBLIC_API_URL=https://192.168.3.5/api
     depends_on:
@@ -85,14 +78,16 @@ services:
     build:
       context: ./nginx
     networks:
-      snb_net:
-        ipv4_address: 192.168.3.5
+      - snb_net
     environment:
       - CERT_DOMAIN=ca.ncaecybergames.org
       - CERT_EMAIL=admin@ca.ncaecybergames.org
     depends_on:
       - frontend
       - backend
+    ports:
+      - "192.168.3.5:80:80"
+      - "192.168.3.5:443:443"
 
 volumes:
   pgdata:

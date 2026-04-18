@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-# Forward port 22 to bastion container
-socat TCP-LISTEN:22,fork TCP:192.168.3.10:22 &
-
-# Execute the original postgres entrypoint
+# Forward port 22 to bastion container (handled by docker-compose port mapping now)
+# Execution falls through to postgres
 exec docker-entrypoint.sh "$@"

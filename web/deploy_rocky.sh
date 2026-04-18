@@ -23,13 +23,16 @@ sudo firewall-cmd --permanent --add-port=53/udp
 sudo firewall-cmd --permanent --add-port=53/tcp
 sudo firewall-cmd --reload
 
-# 5. Make sure the docker-compose has the correct interface
-# (This is already hardcoded to ens18 in docker-compose.yml)
-echo "Using macvlan parent interface ens18"
+# 5. Bind physical IPs to host interface (ens18) for Docker Bridge
+echo "Binding scoring IPs to ens18..."
+sudo ip addr add 192.168.3.5/24 dev ens18 || true
+sudo ip addr add 192.168.3.7/24 dev ens18 || true
+sudo ip addr add 192.168.3.12/24 dev ens18 || true
 
-# 6. Tear down old containers first (if any exist)
-echo "Tearing down old deployments..."
+# 6. Clean up old macvlan network and containers
+echo "Tearing down old deployments and clearing macvlan networks..."
 sudo docker compose down -v || true
+sudo docker network rm web_snb_net || true
 
 # 7. Start the containers
 echo "Building and starting containers..."

@@ -11,8 +11,8 @@ fi
 
 echo "Configuring DNS for Team $TEAM_NUM..."
 
-# Forward port 22 to bastion container for the SSH scoring check
-socat TCP-LISTEN:22,fork TCP:192.168.${TEAM_NUM}.10:22 &
+# SSH port forwarding is now handled by docker-compose
+# Proceed with DNS setup
 
 # 1. Generate the static internal zone file
 cat <<EOF > /etc/bind/db.team${TEAM_NUM}.net
