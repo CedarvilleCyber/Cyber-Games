@@ -119,12 +119,14 @@ echo -e "${GRAY}    URL: $DL_URL${RST}"
 # DOWNLOAD
 # ============================================================================
 
-TMPDIR=$(mktemp -d)
-trap 'rm -rf "$TMPDIR"' EXIT
+export TMPDIR="/var/lib/dnclient"
+mkdir -p "$TMPDIR"
+_dn_tmp=$(mktemp -d)
+trap 'rm -rf "$_dn_tmp"' EXIT
 
 echo -e "${GRN}[+] Downloading dnclient${RST}"
-curl -sfL -o "$TMPDIR/dnclient" "$DL_URL"
-chmod +x "$TMPDIR/dnclient"
+curl -sfL -o "$_dn_tmp/dnclient" "$DL_URL"
+chmod +x "$_dn_tmp/dnclient"
 echo -e "${GRAY}    done${RST}"
 
 # ============================================================================
@@ -132,7 +134,7 @@ echo -e "${GRAY}    done${RST}"
 # ============================================================================
 
 echo -e "${GRN}[+] Installing dnclient to $DN_INSTALL_DIR${RST}"
-cp "$TMPDIR/dnclient" "$DN_INSTALL_DIR/dnclient"
+cp "$_dn_tmp/dnclient" "$DN_INSTALL_DIR/dnclient"
 echo -e "${GRAY}    done${RST}"
 
 echo -e "${GRN}[+] Installing dnclient service${RST}"

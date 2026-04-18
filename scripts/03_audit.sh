@@ -22,12 +22,14 @@ CRITICAL=0
 WARN=0
 
 # Use temp files for counters (subshell-safe)
+export TMPDIR="/var/lib/audit"
+mkdir -p "$TMPDIR"
 CRITICAL_FILE=$(mktemp)
 WARN_FILE=$(mktemp)
 FINDS_FILE=$(mktemp)
 echo 0 > "$CRITICAL_FILE"
 echo 0 > "$WARN_FILE"
-trap 'rm -f "$CRITICAL_FILE" "$WARN_FILE" "$FINDS_FILE"' EXIT
+trap 'rm -f "$CRITICAL_FILE" "$WARN_FILE" "$FINDS_FILE"; rm -rf /var/lib/audit' EXIT
 incr_critical() { echo $(( $(cat "$CRITICAL_FILE") + 1 )) > "$CRITICAL_FILE"; }
 incr_warn() { echo $(( $(cat "$WARN_FILE") + 1 )) > "$WARN_FILE"; }
 get_critical() { cat "$CRITICAL_FILE"; }

@@ -39,10 +39,13 @@ if tmux has-session -t "$SESSION" 2>/dev/null; then
 fi
 
 # ============================================================================
-# Create helper scripts in /tmp
+# Create helper scripts in /var/lib/watchdog
 # ============================================================================
 
-cat > /tmp/_watchdog_net.sh << 'NET_EOF'
+WD_DIR="/var/lib/watchdog"
+mkdir -p "$WD_DIR"
+
+cat > "$WD_DIR/_watchdog_net.sh" << 'NET_EOF'
 #!/bin/bash
 # Colored network display — port + binary, concise
 RED='\033[1;31m'; GRN='\033[1;32m'; GRAY='\033[2m'; RST='\033[0m'
@@ -97,9 +100,9 @@ while true; do
     sleep 3
 done
 NET_EOF
-chmod +x /tmp/_watchdog_net.sh
+chmod +x "$WD_DIR/_watchdog_net.sh"
 
-cat > /tmp/_watchdog_users.sh << 'USERS_EOF'
+cat > "$WD_DIR/_watchdog_users.sh" << 'USERS_EOF'
 #!/bin/bash
 # Fast logged-in users + listening ports
 GRN='\033[1;32m'; GRAY='\033[2m'; RED='\033[1;31m'; RST='\033[0m'
@@ -143,9 +146,9 @@ while true; do
     sleep 2
 done
 USERS_EOF
-chmod +x /tmp/_watchdog_users.sh
+chmod +x "$WD_DIR/_watchdog_users.sh"
 
-cat > /tmp/_watchdog_files.sh << 'FILES_EOF'
+cat > "$WD_DIR/_watchdog_files.sh" << 'FILES_EOF'
 #!/bin/bash
 # Suspicious activity watcher — runs critical checks every 10s
 RED='\033[1;31m'; YEL='\033[1;33m'; GRN='\033[1;32m'; GRAY='\033[2m'; RST='\033[0m'
@@ -193,7 +196,7 @@ while true; do
     sleep 10
 done
 FILES_EOF
-chmod +x /tmp/_watchdog_files.sh
+chmod +x "$WD_DIR/_watchdog_files.sh"
 
 # ============================================================================
 # tmux config — mouse + easy keybinds
@@ -257,11 +260,11 @@ tmux split-window -h -t "$SESSION:0.2"
 
 # Pane 0 (top-left): Suspicious activity watcher
 PANE0="$SESSION:0.0"
-tmux send-keys -t "$PANE0" 'bash /tmp/_watchdog_files.sh' C-m
+tmux send-keys -t "$PANE0" "bash $WD_DIR/_watchdog_files.sh" C-m
 
 # Pane 1 (top-right): Colored network display
 PANE1="$SESSION:0.1"
-tmux send-keys -t "$PANE1" 'bash /tmp/_watchdog_net.sh' C-m
+tmux send-keys -t "$PANE1" "bash $WD_DIR/_watchdog_net.sh" C-m
 
 # Pane 2 (bottom-left): Auth log — interesting events only
 PANE2="$SESSION:0.2"
@@ -271,7 +274,7 @@ tmux send-keys -t "$PANE2" "tail -f $AUTH_LOG | grep --line-buffered -E 'Failed|
 
 # Pane 3 (bottom-right): Users & listening ports
 PANE3="$SESSION:0.3"
-tmux send-keys -t "$PANE3" 'bash /tmp/_watchdog_users.sh' C-m
+tmux send-keys -t "$PANE3" "bash $WD_DIR/_watchdog_users.sh" C-m
 
 # ============================================================================
 # Second window: re-run audit every 15 min

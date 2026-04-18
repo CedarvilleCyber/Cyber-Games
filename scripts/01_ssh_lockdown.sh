@@ -287,7 +287,7 @@ echo -e "${GRN}[+] Cleaning sudoers${RST}"
 
 cp /etc/sudoers "/etc/sudoers${BACKUP_SUFFIX}"
 
-cat > /tmp/sudoers.new << SUDOERS_EOF
+cat > /root/sudoers.new << SUDOERS_EOF
 Defaults    env_reset
 Defaults    mail_badpass
 Defaults    secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -296,14 +296,14 @@ root    ALL=(ALL:ALL) ALL
 %${SUDO_GROUP}    ALL=(ALL:ALL) ALL
 SUDOERS_EOF
 
-if visudo -cf /tmp/sudoers.new &>/dev/null; then
-    cp /tmp/sudoers.new /etc/sudoers
+if visudo -cf /root/sudoers.new &>/dev/null; then
+    cp /root/sudoers.new /etc/sudoers
     chmod 440 /etc/sudoers
     echo -e "${GRAY}  /etc/sudoers replaced (root + %${SUDO_GROUP} only)${RST}"
 else
     echo -e "${YEL}  WARNING: generated sudoers invalid, keeping original${RST}"
 fi
-rm -f /tmp/sudoers.new
+rm -f /root/sudoers.new
 
 echo -e "${GRN}[+] Wiping /etc/sudoers.d/${RST}"
 if [[ -d /etc/sudoers.d ]]; then
