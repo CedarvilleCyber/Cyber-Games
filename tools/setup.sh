@@ -25,6 +25,26 @@ download() {
     chmod +x "$dest"
 }
 
+decompress_bz2() {
+    local src="$1" dest="$2"
+    if command -v bzip2 &>/dev/null; then
+        bzip2 -dk "$src"
+    elif command -v python3 &>/dev/null; then
+        python3 -c "
+import bz2, sys
+with open(sys.argv[1], 'rb') as f:
+    data = bz2.decompress(f.read())
+with open(sys.argv[2], 'wb') as f:
+    f.write(data)
+" "$src" "$dest"
+    else
+        echo -e "${RED}[!] Need bzip2 or python3 to decompress $src${RST}"
+        echo -e "${GRAY}    Install: apt install bzip2  OR  dnf install bzip2${RST}"
+        return 1
+    fi
+    chmod +x "$dest"
+}
+
 # ============================================================================
 # GPLv2 tools
 # ============================================================================
@@ -50,11 +70,11 @@ if [[ -d "$TOOLS_DIR/lynis" ]]; then
 else
     echo -e "${GRN}[+] Downloading lynis${RST}"
     TMPDIR=$(mktemp -d)
-    trap 'rm -rf "$TMPDIR"' EXIT
     curl -sfL "https://github.com/CISOfy/lynis/archive/refs/heads/master.tar.gz" | \
         tar -xz -C "$TMPDIR"
     mv "$TMPDIR/lynis-master" "$TOOLS_DIR/lynis"
     chmod +x "$TOOLS_DIR/lynis/lynis"
+    rm -rf "$TMPDIR"
 fi
 
 # ============================================================================
@@ -70,13 +90,14 @@ case "$ARCH" in
     *) RESTIC_ARCH="amd64" ;;
 esac
 
-download "restic" \
-    "https://github.com/restic/restic/releases/download/v0.17.3/restic_0.17.3_linux_${RESTIC_ARCH}.bz2" \
-    "$TOOLS_DIR/restic.bz2"
-
-if [[ -f "$TOOLS_DIR/restic.bz2" && ! -f "$TOOLS_DIR/restic" ]]; then
-    bunzip2 -k "$TOOLS_DIR/restic.bz2"
-    chmod +x "$TOOLS_DIR/restic"
+if [[ -f "$TOOLS_DIR/restic" ]]; then
+    echo -e "${GRAY}  restic (already exists)${RST}"
+else
+    download "restic" \
+        "https://github.com/restic/restic/releases/download/v0.17.3/restic_0.17.3_linux_${RESTIC_ARCH}.bz2" \
+        "$TOOLS_DIR/restic.bz2"
+    decompress_bz2 "$TOOLS_DIR/restic.bz2" "$TOOLS_DIR/restic"
+    rm -f "$TOOLS_DIR/restic.bz2"
 fi
 
 echo ""
