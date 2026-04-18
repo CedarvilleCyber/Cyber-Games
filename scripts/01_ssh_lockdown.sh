@@ -165,9 +165,9 @@ ListenAddress 0.0.0.0
 PermitRootLogin no
 PubkeyAuthentication yes
 AuthorizedKeysFile .ssh/authorized_keys
-PasswordAuthentication no
+PasswordAuthentication yes
 PermitEmptyPasswords no
-KbdInteractiveAuthentication no
+KbdInteractiveAuthentication yes
 UsePAM yes
 
 HostbasedAuthentication no
@@ -204,6 +204,17 @@ for u in "${ALL_PROTECTED[@]}"; do
 done
 echo "$ALLOW_LINE" >> "$SSHD_CONFIG"
 echo -e "${GRAY}  ${ALLOW_LINE}${RST}"
+
+# Scoring users must use public key auth only
+if [[ ${#SCORING_USERS[@]} -gt 0 ]]; then
+    echo "" >> "$SSHD_CONFIG"
+    for u in "${SCORING_USERS[@]}"; do
+        echo "Match User $u" >> "$SSHD_CONFIG"
+        echo "    PasswordAuthentication no" >> "$SSHD_CONFIG"
+        echo "    KbdInteractiveAuthentication no" >> "$SSHD_CONFIG"
+        echo -e "${GRAY}  Match User $u: pubkey-only${RST}"
+    done
+fi
 
 echo -e "${GRN}[+] Locking down file permissions${RST}"
 chmod 644 /etc/passwd
