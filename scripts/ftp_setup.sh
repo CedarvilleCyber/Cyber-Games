@@ -53,6 +53,8 @@ echo "[+] Writing vsftpd config to $CONFIG"
 cat > "$CONFIG" << EOF
 listen=YES
 anonymous_enable=NO
+anon_upload_enable=NO
+anon_mkdir_write_enable=NO
 local_enable=YES
 local_umask=002
 write_enable=YES
