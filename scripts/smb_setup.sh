@@ -13,14 +13,11 @@ set -euo pipefail
 # ============================================================================
 
 SCORING_USERS=(
-    ""
-    ""
-    ""
-)
-SCORING_PASSWORDS=(
-    ""
-    ""
-    ""
+    "gloucester"
+    "scituate"
+    "leicester"
+    "leominster"
+    "tewksbury"
 )
 SCORING_DIRECTORY="/home/stephen_fair/test"
 CONFIG="/etc/samba/smb.conf"
@@ -42,12 +39,9 @@ chmod 2770 "$SCORING_DIRECTORY"
 echo "[+] Assigning scoring users to group and entering them into Samba password database"
 for i in "${SCORING_USERS[@]}"; do
    user="${SCORING_USERS[$i]}"
-   pass="${SCORING_PASSWORDS[$i]}"
    usermod -aG scoring "$user" 2>/dev/null || true
    usermod -s "${NOLOGIN:-/usr/sbin/nologin}" "$user" 2>/dev/null || true
    usermod -d "$SCORING_DIRECTORY" "$user" 2>/dev/null || true
-   (echo "$pass"; echo "$pass") | smbpasswd -s -a "$user" 2>/dev/null || true
-   smbpasswd -e "$user" 2>/dev/null || true
 done
 
 echo "[+] Writing smbd config to $CONFIG"
