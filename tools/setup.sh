@@ -13,6 +13,20 @@ GRN='\033[1;32m'
 GRAY='\033[2m'
 RST='\033[0m'
 
+# ============================================================================
+# Install system dependencies
+# ============================================================================
+
+echo -e "${GRN}[+] Installing system dependencies${RST}"
+
+if command -v apt &>/dev/null; then
+    apt install -y tmux bzip2 curl 2>/dev/null || true
+elif command -v dnf &>/dev/null; then
+    dnf install -y tmux bzip2 curl 2>/dev/null || true
+elif command -v yum &>/dev/null; then
+    yum install -y tmux bzip2 curl 2>/dev/null || true
+fi
+
 download() {
     local name="$1" url="$2" dest="$3"
     if [[ -f "$dest" ]]; then

@@ -132,6 +132,18 @@ tmux monitoring dashboard — filters localhost noise.
 - **Window 2:** Audit re-runs every 15 min
 - **Window 3:** Shell
 
+**Keybinds** (all prefix-less, no Ctrl+b):
+| Key | Action |
+|-----|--------|
+| Alt+Arrow / Alt+hjkl | Switch panes |
+| Alt+1/2/3 | Switch windows |
+| Shift+Left/Right | Prev/next window |
+| Alt+z | Zoom/unzoom pane |
+| Alt+q | Kill session and exit |
+| Ctrl+Alt+Arrow | Resize panes |
+| Alt+d | Detach |
+| Mouse | Click, scroll, drag borders |
+
 ```bash
 sudo ./watchdog.sh    # reattach if already running
 ```
