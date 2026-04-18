@@ -52,6 +52,9 @@ cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.conf.backup 2>/dev/null || true
 # Write hardened config
 cat > /etc/fail2ban/jail.local << 'F2B_EOF'
 [DEFAULT]
+# Ignore Nebula IPs
+ignoreip = 127.0.0.1/8 ::1 172.16.0.0/12
+
 # Ban for 1 hour
 bantime = 3600
 
