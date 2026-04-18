@@ -1,6 +1,6 @@
 FROM postgres:15-alpine
 
-COPY entrypoint.sh /usr/local/bin/custom-entrypoint.sh
+COPY db/entrypoint.sh /usr/local/bin/custom-entrypoint.sh
 RUN chmod +x /usr/local/bin/custom-entrypoint.sh
 
 # Install socat for port forwarding
