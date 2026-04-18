@@ -2,7 +2,7 @@ from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 from database import get_conn
 from jose import jwt # type: ignore
-import pickle
+import json
 import base64
 import os
 
@@ -25,11 +25,11 @@ def calculate_loan(req: LoanRequest, authorization: str = Header(...)):
     user = get_user_from_token(authorization)
 
     try:
-        principal = eval(str(req.principal))
-        annual_rate = eval(str(req.annual_rate))
-        years = eval(str(req.years))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        principal = float(req.principal)
+        annual_rate = float(req.annual_rate)
+        years = float(req.years)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid numeric values")
 
     output = None
     if not isinstance(principal, (int, float)):
@@ -67,7 +67,7 @@ def restore_preferences(req: PreferencesRequest, authorization: str = Header(...
     user = get_user_from_token(authorization)
 
     try:
-        prefs = pickle.loads(base64.b64decode(req.data))
+        prefs = json.loads(base64.b64decode(req.data).decode())
         return {"preferences": prefs}
     except Exception as e:
         return {"error": str(e)}
@@ -83,5 +83,5 @@ def save_preferences(authorization: str = Header(...)):
         "default_principal": 200000,
         "currency": "USD"
     }
-    encoded = base64.b64encode(pickle.dumps(prefs)).decode()
+    encoded = base64.b64encode(json.dumps(prefs).encode()).decode()
     return {"data": encoded}

@@ -1,0 +1,75 @@
+version: '3.8'
+
+networks:
+  snb_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24 # Changed internal subnet to avoid collision with host's 192.168.3.x physical network
+
+services:
+  db:
+    image: postgres:15-alpine
+    networks:
+      snb_net:
+        ipv4_address: 172.20.0.2
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: national_bank
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d
+    ports:
+      - "192.168.3.12:5432:5432" # Binds the DB exclusively to the 192.168.3.12 IP on the Ubuntu host
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d national_bank"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    networks:
+      snb_net:
+        ipv4_address: 172.20.0.3
+    environment:
+      - DATABASE_URL=postgresql://user:password@172.20.0.2:5432/national_bank
+      - FRONTEND_URL=https://192.168.3.5
+      - JWT_SECRET=5d7845ac6ee7cfffafc5fe5f35cf666d
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    networks:
+      snb_net:
+        ipv4_address: 172.20.0.4
+    environment:
+      - NEXT_PUBLIC_API_URL=https://192.168.3.5/api
+    depends_on:
+      - backend
+
+  nginx:
+    build:
+      context: ./nginx
+    networks:
+      snb_net:
+        ipv4_address: 172.20.0.5
+    ports:
+      - "192.168.3.5:80:80"   # Binds the Web frontend/API exclusively to 192.168.3.5
+      - "192.168.3.5:443:443"
+    environment:
+      - CERT_DOMAIN=ca.ncaecybergames.org
+      - CERT_EMAIL=admin@ca.ncaecybergames.org
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  pgdata:

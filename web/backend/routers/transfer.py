@@ -22,10 +22,13 @@ def transfer(req: TransferRequest, authorization: str = Header(...)):
     conn = get_conn()
     cur = conn.cursor()
 
-    cur.execute("SELECT balance FROM accounts WHERE id = %s", (req.from_account_id,))
+    cur.execute("SELECT balance, user_id FROM accounts WHERE id = %s", (req.from_account_id,))
     src = cur.fetchone()
     if not src:
         raise HTTPException(status_code=404, detail="Source account not found")
+
+    if str(src[1]) != str(user.get("sub")):
+        raise HTTPException(status_code=403, detail="Unauthorized to transfer from this account")
 
     if src[0] < req.amount:
         raise HTTPException(status_code=400, detail="Insufficient funds")

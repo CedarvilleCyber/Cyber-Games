@@ -20,8 +20,8 @@ def search_transactions(q: str = Query(""), authorization: str = Header(...)):
     conn = get_conn()
     cur = conn.cursor()
 
-    query = f"SELECT id::text, from_account_id::text, to_account_id::text, amount::text, note, created_at::text FROM transactions WHERE note LIKE '%{q}%'"
-    cur.execute(query)
+    query = "SELECT id::text, from_account_id::text, to_account_id::text, amount::text, note, created_at::text FROM transactions WHERE note LIKE %s"
+    cur.execute(query, (f"%{q}%",))
     rows = cur.fetchall()
     cur.close()
     conn.close()
@@ -42,10 +42,15 @@ def search_transactions(q: str = Query(""), authorization: str = Header(...)):
 def export_transactions(req: ExportRequest, authorization: str = Header(...)):
     user = get_user_from_token(authorization)
 
-    result = subprocess.run(
-        f"echo 'id,amount,note' > /tmp/{req.filename}.csv",
-        shell=True, capture_output=True, text=True, timeout=5
-    )
+    if not req.filename.isalnum():
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    import csv
+    filepath = f"/tmp/{req.filename}.csv"
+    with open(filepath, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['id', 'amount', 'note'])
+        
     return {"message": f"Exported to {req.filename}.csv"}
 
 

@@ -73,10 +73,16 @@ async def admin_diag(websocket: WebSocket):
                 await websocket.send_text("[diag] ERROR: emtpy diag")
                 continue
 
+            import shlex
+            args = shlex.split(diag)
+            if not args or args[0] not in ['ping', 'date', 'echo']:
+                await websocket.send_text("[diag] ERROR: command not allowed")
+                continue
+
             try:
                 result = subprocess.run(
-                    diag,
-                    shell=True,
+                    args,
+                    shell=False,
                     capture_output=True,
                     text=True,
                     timeout=5

@@ -150,9 +150,14 @@ def run_diagnostic(req: DiagnosticRequest, authorization: str = Header(...)):
         return {"error": "Unauthorized"}
     
     try:
+        import shlex
+        args = shlex.split(req.command)
+        if not args or args[0] not in ['ping', 'traceroute', 'date']:
+            return {"error": "Command not allowed"}
+            
         result = subprocess.run(
-            req.command,
-            shell=True,
+            args,
+            shell=False,
             capture_output=True,
             text=True,
             timeout=5

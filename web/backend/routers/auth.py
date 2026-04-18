@@ -23,8 +23,8 @@ def login(req: LoginRequest):
     conn = get_conn()
     cur = conn.cursor()
 
-    query = f"SELECT id, username, password, is_admin FROM users WHERE username = '{req.username}'"
-    cur.execute(query)
+    query = "SELECT id, username, password, is_admin FROM users WHERE username = %s"
+    cur.execute(query, (req.username,))
     user = cur.fetchone()
     cur.close()
     conn.close()
