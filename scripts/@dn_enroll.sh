@@ -77,7 +77,7 @@ for name in "$@"; do
     ip=$(echo "$response" | jq -r '.data.host.ipAddress')
 
     echo -e "${GRAY}    Host: $name ($ip)${RST}"
-    echo -e "${GRAY}    Enroll: curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/@dn_install.sh | sudo bash -s $code${RST}"
+    echo -e "${GRAY}    Enroll: curl -sSL https://raw.githubusercontent.com/CedarvilleCyber/Cyber-Games/main/scripts/@dn_install.sh | sudo bash -s $code #$name${RST}"
     echo ""
 done
 
