@@ -4,7 +4,7 @@ networks:
   snb_net:
     driver: macvlan
     driver_opts:
-      parent: eth0 # Replace with your Ubuntu host's actual physical interface (e.g., ens18)
+      parent: ens18
     ipam:
       config:
         - subnet: 192.168.3.0/24
@@ -33,7 +33,7 @@ services:
       POSTGRES_DB: national_bank
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./db-init:/docker-entrypoint-initdb.d
+      - ./db-init:/docker-entrypoint-initdb.d:z
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d national_bank"]
       interval: 5s
