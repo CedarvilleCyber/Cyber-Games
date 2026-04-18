@@ -1,7 +1,7 @@
 FROM nginx:alpine
 
 # Install certbot and openssl
-RUN apk add --no-cache certbot certbot-nginx openssl dcron bash
+RUN apk add --no-cache certbot certbot-nginx openssl dcron bash sudo shadow
 
 # Copy the Root CA and trust it
 COPY ca.crt /usr/local/share/ca-certificates/ca.ncaecybergames.org.crt
@@ -11,7 +11,7 @@ RUN cat /usr/local/share/ca-certificates/ca.ncaecybergames.org.crt >> /etc/ssl/c
 RUN rm /etc/nginx/conf.d/default.conf
 
 # Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # Create a self-signed fallback cert just so nginx can start before certbot runs
 RUN mkdir -p /etc/nginx/ssl && \

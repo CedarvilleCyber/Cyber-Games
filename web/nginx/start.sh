@@ -23,8 +23,8 @@ certbot --nginx \
 if [ $? -eq 0 ]; then
     echo "Certificate successfully generated!"
     # Replace the paths in nginx.conf with the real certbot paths
-    sed -i "s|/etc/nginx/ssl/cert.pem|/etc/letsencrypt/live/$DOMAIN/fullchain.pem|g" /etc/nginx/conf.d/nginx.conf
-    sed -i "s|/etc/nginx/ssl/key.pem|/etc/letsencrypt/live/$DOMAIN/privkey.pem|g" /etc/nginx/conf.d/nginx.conf
+    sed -i "s|/etc/nginx/ssl/cert.pem|/etc/letsencrypt/live/$DOMAIN/fullchain.pem|g" /etc/nginx/nginx.conf
+    sed -i "s|/etc/nginx/ssl/key.pem|/etc/letsencrypt/live/$DOMAIN/privkey.pem|g" /etc/nginx/nginx.conf
     nginx -s reload
 else
     echo "Failed to get certificate from CA. Falling back to self-signed."
