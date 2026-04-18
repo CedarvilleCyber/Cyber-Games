@@ -3,10 +3,16 @@
 ## links
 
 - [nebula ips](https://nebula-dashboard.kieran-fdb.workers.dev/)
+- [score sheet](https://docs.google.com/spreadsheets/d/14kZkKCNFD5ob11aKo5WmjuUN0gXy-cKMvj7LjQG3rjg/edit?gid=1945677410#gid=1945677410)
 
 ## follow this
 
-first off setup network on your machine and change your password.
+first off setup network on your machine. lockdown creates a `blueteam` user with a locked password — you must set it manually:
+
+```bash
+passwd blueteam
+passwd root
+```
 
 next run lockdown
 

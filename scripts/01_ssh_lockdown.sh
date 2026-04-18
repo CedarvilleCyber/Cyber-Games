@@ -131,7 +131,7 @@ echo -e "${GRAY}Protected users: ${ALL_PROTECTED[*]}${RST}"
 echo ""
 
 # ============================================================================
-# 1. CREATE BLUETEAM USER & SET PASSWORDS
+# 1. CREATE BLUETEAM USER
 # ============================================================================
 
 echo -e "${GRN}[+] Fixing current user shell${RST}"
@@ -144,44 +144,7 @@ else
     echo -e "${GRAY}  ${CURRENT_USER}: /bin/bash (OK)${RST}"
 fi
 
-echo -e "${GRN}[+] Setting up blueteam user and passwords${RST}"
-
-# Check if passwords provided via environment variables
-if [[ -n "${ROOT_PASSWORD:-}" && -n "${BLUETEAM_PASSWORD:-}" ]]; then
-    ROOT_PW="$ROOT_PASSWORD"
-    BLUETEAM_PW="$BLUETEAM_PASSWORD"
-    echo -e "${GRAY}  Using passwords from environment variables${RST}"
-# Check if we can read from terminal (not piped)
-elif [[ -t 0 ]]; then
-    read -sp "    Enter password for root: " ROOT_PW < /dev/tty
-    echo ""
-    read -sp "    Enter password for blueteam: " BLUETEAM_PW < /dev/tty
-    echo ""
-else
-    # Script is piped - generate random passwords
-    ROOT_PW=$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-16)
-    BLUETEAM_PW=$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-16)
-
-    echo ""
-    echo -e "${RED}${BOLD}╔════════════════════════════════════════════════════════════════╗${RST}"
-    echo -e "${RED}${BOLD}║         GENERATED PASSWORDS - COPY/SCREENSHOT NOW!             ║${RST}"
-    echo -e "${RED}${BOLD}╠════════════════════════════════════════════════════════════════╣${RST}"
-    echo -e "${RED}${BOLD}║  root password:     ${ROOT_PW}                           ║${RST}"
-    echo -e "${RED}${BOLD}║  blueteam password: ${BLUETEAM_PW}                           ║${RST}"
-    echo -e "${RED}${BOLD}╚════════════════════════════════════════════════════════════════╝${RST}"
-    echo ""
-    echo -e "${RED}[!] Passwords NOT saved to disk — copy them NOW${RST}"
-    echo -e "${GRAY}    Waiting 10 seconds...${RST}"
-    echo ""
-
-    sleep 10
-fi
-
-# Validate passwords are not empty
-if [[ -z "$ROOT_PW" || -z "$BLUETEAM_PW" ]]; then
-    echo -e "${RED}[!] ERROR: Passwords cannot be empty${RST}"
-    exit 1
-fi
+echo -e "${GRN}[+] Setting up blueteam user${RST}"
 
 if ! id "blueteam" &>/dev/null; then
     useradd -m -s /bin/bash blueteam
@@ -193,13 +156,6 @@ grep -q "^wheel:" /etc/group && SUDO_GROUP="wheel"
 
 usermod -aG "$SUDO_GROUP" blueteam 2>/dev/null || true
 echo -e "${GRAY}  blueteam added to ${SUDO_GROUP}${RST}"
-
-echo "root:${ROOT_PW}" | chpasswd
-echo -e "${GRAY}  root password set${RST}"
-echo "blueteam:${BLUETEAM_PW}" | chpasswd
-echo -e "${GRAY}  blueteam password set${RST}"
-
-unset ROOT_PW BLUETEAM_PW
 
 # ============================================================================
 # 2. BACKUP
