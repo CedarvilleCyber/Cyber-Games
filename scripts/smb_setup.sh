@@ -42,33 +42,33 @@ for i in "${SCORING_USERS[@]}"; do
    usermod -aG scoring "$user" 2>/dev/null || true
    usermod -s "${NOLOGIN:-/usr/sbin/nologin}" "$user" 2>/dev/null || true
    usermod -d "$SCORING_DIRECTORY" "$user" 2>/dev/null || true
+   smbpasswd -e "$user"
 done
 
 echo "[+] Writing smbd config to $CONFIG"
 cat > "$CONFIG" << EOF
 [global]
-   workgroup = WORKGROUP
-   server string = Samba Server
-   security = user
-   map to guest = Never
-   smb encrypt = required
-   min password age = 3153600000
-   server min protocol = SMB3
-   client min protocol = SMB3
-   log file = /var/log/samba/log.%m
-   log level = 1
-[scoring]
-   path = "$SCORING_DIRECTORY"
-   valid users = @scoring
-   read only = No
-   guest ok = No
-   veto files = /*.exe/*.com/*.dll/*.bat/*.vbs/*.sh/*.php/
-   delete veto files = yes
-   create mask = 0660
-   force create mode = 0660
-   directory mask = 0770
-   force directory mode = 0770
-   force group = scoring
+        workgroup = SAMBA
+        security = user
+        passdb backend = tdbsam
+        map to guest = never
+        min protocol = NT1
+        max protocol = SMB3
+        log file = /var/log/samba/log.%m
+        log level = 1
+
+[files]
+        path = @SCORING_DIRECTORY
+        valid users = @scoring
+        read only = No
+        guest ok = No
+        veto files = /*.exe/*.com/*.dll/*.bat/*.vbs/*.sh/*.php/
+        delete veto files = yes
+        create mask = 0660
+        force create mode = 0660
+        directory mask = 0770
+        force directory mode = 0770
+        force group = scoring
 EOF
 
 echo "[+] Check config file for any errors"
