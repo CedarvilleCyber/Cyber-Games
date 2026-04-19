@@ -23,7 +23,6 @@ Clones the repo and downloads open-source tools (pspy64, linpeas, lynis, restic)
 - [@doctor.sh](#doctorsh) - Service diagnostics (why is it down?)
 - [@fruit.sh](#fruitsh) - Service config misconfiguration audit
 - [@gravwell_setup.sh](#gravwell_setupsh) - Centralized logging to Gravwell
-- [@init_overview.sh](#init_overviewsh) - Initial machine cleanup (crontabs, immutability, /tmp)
 - [@ftp_setup.sh](#ftp_setupsh) - FTP server setup for scoring
 - [@smb_setup.sh](#smb_setupsh) - SMB server setup for scoring
 - [@monitor.sh](#monitorsh) - Periodic connection and user check
@@ -166,14 +165,6 @@ GRAVWELL_HOST=10.0.0.5 GRAVWELL_SECRET=secret sudo ./gravwell_setup.sh
 
 ---
 
-## [@init_overview.sh](./@init_overview.sh)
-
-Initial machine cleanup. Clears `/tmp`, removes `ld.so.preload`, removes immutable flags, changes current user shell to `/bin/bash`, nukes all crontabs and masks cron.
-
-**Warning:** Deletes all cron jobs and masks cron. Make sure no scored services depend on cron.
-
----
-
 ## [@ftp_setup.sh](./@ftp_setup.sh)
 
 FTP scoring setup — creates scoring group/directory, configures vsftpd (no anonymous, chroot, userlist).
@@ -187,12 +178,6 @@ FTP scoring setup — creates scoring group/directory, configures vsftpd (no ano
 SMB scoring setup — creates scoring group/directory, configures smbd (SMB3, encrypted, no guest).
 
 **Config:** Edit `SCORING_USERS`, `SCORING_PASSWORDS`, `SCORING_DIRECTORY`.
-
----
-
-## [@monitor.sh](./@monitor.sh)
-
-Simple loop — shows `w` and `ss -tulnp` every 2 seconds.
 
 ---
 
